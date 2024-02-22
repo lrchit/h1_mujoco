@@ -29,6 +29,7 @@
 #include "simulate.h"
 #include <mujoco/mujoco.h>
 
+#include "estimate.h"
 #include "iLQR.h"
 #include "pd_controller.h"
 
@@ -69,6 +70,8 @@ using Seconds = std::chrono::duration<double>;
 
 std::string yaml_name = "../controllers/iLQR/param.yaml";
 Cartpole_iLQR iLQR(yaml_name);
+H1Estm estimate;
+H1State state;
 
 //---------------------------------------- plugin handling
 //-----------------------------------------
@@ -447,8 +450,6 @@ void ControlLoop(mj::Simulate &sim) {
     if (!sim.uiloadrequest.load()) {
       if (d != nullptr) {
 
-        AngleNormalization(d->sensordata[1]);
-
         // std::chrono::time_point<std::chrono::system_clock> t_start =
         //     std::chrono::system_clock::now();
 
@@ -457,6 +458,37 @@ void ControlLoop(mj::Simulate &sim) {
 
           // iLQR
           // iLQR.get_control(d);
+        }
+
+        std::this_thread::sleep_for(std::chrono::milliseconds(2));
+
+        // std::chrono::time_point<std::chrono::system_clock> t_end =
+        //     std::chrono::system_clock::now();
+        // double time_record =
+        //     std::chrono::duration_cast<std::chrono::milliseconds>(t_end -
+        //                                                           t_start)
+        //         .count();
+        // std::cout << "controller_time: " << time_record / 1000 << "\n";
+      }
+    }
+  }
+}
+
+void EstimateLoop(mj::Simulate &sim) {
+
+  while (!sim.exitrequest.load()) {
+    if (!sim.uiloadrequest.load()) {
+      if (d != nullptr) {
+
+        // AngleNormalization(d->sensordata[1]);
+
+        // std::chrono::time_point<std::chrono::system_clock> t_start =
+        //     std::chrono::system_clock::now();
+
+        {
+
+          // estimate
+          estimate.cheater_compute_state(state, d);
         }
 
         std::this_thread::sleep_for(std::chrono::milliseconds(2));
@@ -497,40 +529,22 @@ void PhysicsThread(mj::Simulate *sim, const char *filename) {
 
       // 设置初始状态（可选）
       // Initialize joint positions
-      double qpos_init[] = {0.00449956,
+      double qpos_init[] = {// pelvis pos
+                            0, 0, 0.98,
+                            // pelvis quat
+                            1, 0, 0, 0,
+                            // left leg
+                            0, 0, -0.4, 0.8, -0.4,
+                            // right leg
+                            0, 0, -0.4, 0.8, -0.4,
+                            // torso joint
                             0,
-                            0.497301,
-                            0.97861,
-                            -0.0164104,
-                            0.0177766,
-                            -0.204298,
-                            -1.1997,
-                            0,
-                            1.42671,
-                            -2.25907e-06,
-                            -1.52439,
-                            1.50645,
-                            -1.59681,
-                            -0.00449956,
-                            0,
-                            0.497301,
-                            0.97874,
-                            0.0038687,
-                            -0.0151572,
-                            -0.204509,
-                            -1.1997,
-                            0,
-                            1.42671,
-                            0,
-                            -1.52439,
-                            1.50645,
-                            -1.59681};
-      for (int i = 0; i < 2; ++i) {
-        d->qpos[i] = 0;
-      }
-      d->qpos[2] = 1.0059301;
-      for (int i = 0; i < 28; ++i) {
-        d->qpos[7 + i] = qpos_init[i];
+                            // left arm
+                            0, 0, 0, 0,
+                            // right arm
+                            0, 0, 0, 0};
+      for (int i = 0; i < 26; ++i) {
+        d->qpos[i] = qpos_init[i];
       }
 
       // allocate ctrlnoise
@@ -543,8 +557,8 @@ void PhysicsThread(mj::Simulate *sim, const char *filename) {
     }
   }
   // Initialize joint velocities
-  mj_forward(m, d);
-  std::this_thread::sleep_for(std::chrono::milliseconds(5000000000));
+  // mj_forward(m, d);
+  // std::this_thread::sleep_for(std::chrono::milliseconds(5000000000));
 
   PhysicsLoop(*sim);
 
@@ -559,6 +573,13 @@ void PhysicsThread(mj::Simulate *sim, const char *filename) {
 
 void ControlThread(mj::Simulate *sim, const char *filename) {
   ControlLoop(*sim);
+}
+
+//-------------------------------------- estimate_thread
+//--------------------------------------------
+
+void EstimateThread(mj::Simulate *sim, const char *filename) {
+  EstimateLoop(*sim);
 }
 
 //------------------------------------------ main
@@ -613,17 +634,20 @@ int main(int argc, char **argv) {
   // if (argc > 1) {
   //   filename = argv[1];
   // }
-  filename = "../assets/scene.xml";
+  filename = "../h1_description/mjcf/scene.xml";
 
   // start physics thread
   std::thread physicsthreadhandle(&PhysicsThread, sim.get(), filename);
   // start control thread
   std::thread controlthreadhandle(&ControlThread, sim.get(), filename);
+  // start etsimate thread
+  std::thread estimatethreadhandle(&EstimateThread, sim.get(), filename);
 
   // start simulation UI loop (blocking call)
   sim->RenderLoop();
   physicsthreadhandle.join();
   controlthreadhandle.join();
+  estimatethreadhandle.join();
 
   return 0;
 }

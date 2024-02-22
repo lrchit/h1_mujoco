@@ -60,7 +60,13 @@
         "complex": "cpp",
         "list": "cpp",
         "cfenv": "cpp",
-        "valarray": "cpp"
+        "valarray": "cpp",
+        "strstream": "cpp",
+        "bitset": "cpp",
+        "unordered_set": "cpp",
+        "typeindex": "cpp",
+        "variant": "cpp",
+        "specialfunctions": "cpp"
     },
     "workbench.colorTheme": "Visual Studio Light",
     "workbench.editor.decorations.colors": true,

@@ -10,7 +10,9 @@ if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3")
 endif()
 
-project(cartpole_sim)
+add_definitions(-w)
+
+project(h1_sim)
 
 include(FetchContent)  
 
@@ -49,7 +51,9 @@ include_directories(
     ${eigen_INCLUDE_DIRS}
     # ${colpack_INCLUDE_DIRS}
     ${pinocchio_INCLUDE_DIRS}
+    estimate
     simulate
+    utils
     controllers/iLQR
     ${Python3_INCLUDE_DIRS} 
     ${Python3_NumPy_INCLUDE_DIRS}
@@ -78,10 +82,14 @@ endif()
 
 aux_source_directory(simulate SIM_SRC)
 aux_source_directory(controllers/iLQR ILQR_SRC)
+aux_source_directory(estimate ESTM_SRC)
+aux_source_directory(utils UTILS_SRC)
 
 add_executable(main main.cpp
                     ${ILQR_SRC}
                     ${SIM_SRC}
+                    ${ESTM_SRC}
+                    ${UTILS_SRC}
 
 )
 
