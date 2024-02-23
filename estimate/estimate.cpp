@@ -24,7 +24,8 @@ void H1Estm::base2world(Vector<double, 6> &p_end_effector_base,
                         Vector<double, 6> &v_end_effector_base,
                         Vector<double, 6> &p_end_effector_world,
                         Vector<double, 6> &v_end_effector_world,
-                        Vector<double, 6> Posture, Vector<double, 6> Velocity) {
+                        Vector<double, 6> p_base_world,
+                        Vector<double, 6> v_base_world) {
 
   const Vector3d p_end_effector_base_linear =
       p_end_effector_base.head<3>(); // 末端执行器在基座坐标系下的位置
@@ -37,13 +38,13 @@ void H1Estm::base2world(Vector<double, 6> &p_end_effector_base,
 
   // 基座姿态数据
   const Vector3d p_base_world_linear =
-      Posture.head<3>(); // 基座在世界坐标系下的位置
+      p_base_world.head<3>(); // 基座在世界坐标系下的位置
   const Vector3d p_base_world_angular =
-      Posture.tail<3>(); // 基座在世界坐标系下的rpy
+      p_base_world.tail<3>(); // 基座在世界坐标系下的rpy
   const Vector3d v_base_world_linear =
-      Velocity.head<3>(); // 基座在世界坐标系下的线速度
+      v_base_world.head<3>(); // 基座在世界坐标系下的线速度
   const Vector3d v_base_world_angular =
-      Velocity.tail<3>(); // 基座在世界坐标系下的角速度
+      v_base_world.tail<3>(); // 基座在世界坐标系下的角速度
 
   // 获取基座到世界坐标系的旋转矩阵 R_world_to_base
   const Matrix3d R_world_to_base =
@@ -146,29 +147,30 @@ void H1Estm::cheater_compute_state(H1State &state, mjData *d) {
     Vector<double, 6> p_rel, dp_rel;
     limb_kin[i].forward_kin_frame(state.leg_qpos.col(i), state.leg_qvel.col(i),
                                   p_rel, dp_rel, frame_name[i]);
-    Vector<double, 6> Posture, Velocity;
-    Posture.head<3>() = state.pos;
-    Posture.tail<3>() = state.euler_angle;
-    Velocity.head<3>() = state.lin_vel;
-    Velocity.tail<3>() = state.euler_angle_vel;
+    Vector<double, 6> p_base_world, v_base_world;
+    p_base_world.head<3>() = state.pos;
+    p_base_world.tail<3>() = state.euler_angle;
+    v_base_world.head<3>() = state.lin_vel;
+    v_base_world.tail<3>() = state.euler_angle_vel;
 
     Vector<double, 6> p_rel_world, dp_rel_world;
-    state.foot_posture.col(i) = p_rel;
-    state.foot_vel_general.col(i) = dp_rel;
-    base2world(p_rel, dp_rel, p_rel_world, dp_rel_world, Posture, Velocity);
+    state.foot_pos_base.col(i) = p_rel;
+    state.foot_vel_base.col(i) = dp_rel;
+    base2world(p_rel, dp_rel, p_rel_world, dp_rel_world, p_base_world,
+               v_base_world);
 
-    state.foot_posture_world.col(i) = p_rel_world;
-    state.foot_vel_general_world.col(i) = dp_rel_world;
+    state.foot_pos_world.col(i) = p_rel_world;
+    state.foot_vel_world.col(i) = dp_rel_world;
   }
-  // std::cout << "foot_posture = \n"
-  //           << state.foot_posture.col(0).transpose() << std::endl;
-  // std::cout << "foot_posture_world = \n"
-  //           << state.foot_posture_world.col(0).transpose() << std::endl;
+  // std::cout << "foot_pos_base = \n"
+  //           << state.foot_pos_base.col(0).transpose() << std::endl;
+  // std::cout << "foot_pos_world = \n"
+  //           << state.foot_pos_world.col(0).transpose() << std::endl;
 
   // Vector<double, 5> qpos, qvel;
   // Vector<double, 6> x, dx;
-  // x = state.foot_posture.col(0);
-  // dx = state.foot_vel_general.col(0);
+  // x = state.foot_pos_base.col(0);
+  // dx = state.foot_vel_base.col(0);
   // limb_kin[0].inverse_kin_frame(qpos, qvel, x, dx, frame_name[0],
   //                               Vector<double, 5>(0, 0, -0.4, 0.8, -0.4));
   // std::cout << "leg_qpos = \n" << state.leg_qpos.transpose() << std::endl;
@@ -182,33 +184,34 @@ void H1Estm::cheater_compute_state(H1State &state, mjData *d) {
     limb_kin[2 + i].forward_kin_frame(state.arm_qpos.col(i),
                                       state.arm_qvel.col(i), p_rel, dp_rel,
                                       frame_name[2 + i]);
-    Vector<double, 6> Posture, Velocity;
-    Posture.head<3>() = state.pos;
-    Posture.tail<3>() = state.euler_angle;
-    Velocity.head<3>() = state.lin_vel;
-    Velocity.tail<3>() = state.euler_angle_vel;
+    Vector<double, 6> p_base_world, v_base_world;
+    p_base_world.head<3>() = state.pos;
+    p_base_world.tail<3>() = state.euler_angle;
+    v_base_world.head<3>() = state.lin_vel;
+    v_base_world.tail<3>() = state.euler_angle_vel;
 
     Vector<double, 6> p_rel_world, dp_rel_world;
-    state.hand_posture.col(i) = p_rel;
-    state.hand_vel_general.col(i) = dp_rel;
-    base2world(p_rel, dp_rel, p_rel_world, dp_rel_world, Posture, Velocity);
+    state.hand_pos_base.col(i) = p_rel;
+    state.hand_vel_base.col(i) = dp_rel;
+    base2world(p_rel, dp_rel, p_rel_world, dp_rel_world, p_base_world,
+               v_base_world);
 
-    state.hand_posture_world.col(i) = p_rel_world;
-    state.hand_vel_general_world.col(i) = dp_rel_world;
+    state.hand_pos_world.col(i) = p_rel_world;
+    state.hand_vel_world.col(i) = dp_rel_world;
   }
-  // std::cout << "hand_posture = \n"
-  //           << state.hand_posture.col(0).transpose() << std::endl;
-  // std::cout << "hand_posture_world = \n"
-  //           << state.hand_posture_world.col(0).transpose() << std::endl;
-  // std::cout << "hand_vel_general = \n"
-  //           << state.hand_vel_general.col(0).transpose() << std::endl;
-  // std::cout << "hand_vel_general_world = \n"
-  //           << state.hand_vel_general_world.col(0).transpose() << std::endl;
+  // std::cout << "hand_pos_base = \n"
+  //           << state.hand_pos_base.col(0).transpose() << std::endl;
+  // std::cout << "hand_pos_world = \n"
+  //           << state.hand_pos_world.col(0).transpose() << std::endl;
+  // std::cout << "hand_vel_base = \n"
+  //           << state.hand_vel_base.col(0).transpose() << std::endl;
+  // std::cout << "hand_vel_world = \n"
+  //           << state.hand_vel_world.col(0).transpose() << std::endl;
 
   // Vector<double, 5> qpos, qvel;
   // Vector<double, 6> x, dx;
-  // x = state.hand_posture.col(0);
-  // dx = state.hand_vel_general.col(0);
+  // x = state.hand_pos_base.col(0);
+  // dx = state.hand_vel_base.col(0);
   // limb_kin[2].inverse_kin_frame(qpos, qvel, x, dx, frame_name[2],
   //                               Vector<double, 5>(0, 0, 0, 0, 0));
   // std::cout << "arm_qpos = \n" << state.arm_qpos.transpose() << std::endl;

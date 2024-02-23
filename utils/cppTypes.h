@@ -16,12 +16,18 @@ using Vec2 = typename Eigen::Matrix<double, 2, 1>;
 using Vec3 = typename Eigen::Matrix<double, 3, 1>;
 // 4x1 Vector
 using Vec4 = typename Eigen::Matrix<double, 4, 1>;
+// 5x1 Vector
+using Vec5 = typename Eigen::Matrix<double, 5, 1>;
+// 6x1 Vector
+using Vec6 = typename Eigen::Matrix<double, 6, 1>;
 // 12x1 Vector
 using Vec12 = typename Eigen::Matrix<double, 12, 1>;
-// 18x1 Vector
-using Vec18 = typename Eigen::Matrix<double, 18, 1>; // full_config
 // 19x1 Vector
-using Vec19 = typename Eigen::Matrix<double, 19, 1>; // full_config
+using Vec19 = typename Eigen::Matrix<double, 19, 1>;
+// 25x1 Vector
+using Vec25 = typename Eigen::Matrix<double, 25, 1>; // full_config
+// 26x1 Vector
+using Vec26 = typename Eigen::Matrix<double, 26, 1>; // full_config
 // 4x1 Vector (quaternion)
 using Quat = typename Eigen::Matrix<double, 4, 1>;
 // Spatial Vector (6x1, all subspaces)

@@ -55,6 +55,7 @@ include_directories(
     simulate
     utils
     controllers/iLQR
+    controllers/mpc
     ${Python3_INCLUDE_DIRS} 
     ${Python3_NumPy_INCLUDE_DIRS}
 )
@@ -82,11 +83,13 @@ endif()
 
 aux_source_directory(simulate SIM_SRC)
 aux_source_directory(controllers/iLQR ILQR_SRC)
+aux_source_directory(controllers/mpc MPC_SRC)
 aux_source_directory(estimate ESTM_SRC)
 aux_source_directory(utils UTILS_SRC)
 
 add_executable(main main.cpp
                     ${ILQR_SRC}
+                    ${MPC_SRC}
                     ${SIM_SRC}
                     ${ESTM_SRC}
                     ${UTILS_SRC}

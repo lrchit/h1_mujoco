@@ -1,0 +1,54 @@
+
+omniMode: false
+
+use_wbc: true
+
+use_body_opti: true
+
+horizon: 20
+constraint_num: 16
+iteration_between_mpc: 13
+iteration_between_body_opti: 2
+
+q1: 0.25
+q2: 0.25
+q3: 20
+q4: 2
+q5: 2
+q6: 30
+q7: 0
+q8: 0
+q9: 0.5
+q10: 0.2
+q11: 0.4
+q12: 0.2
+
+r1: 1e-6
+r2: 1e-6
+r3: 1e-6
+r4: 1e-6
+r5: 1e-6
+r6: 1e-6
+
+kp_cartesian_x: 2000
+kp_cartesian_y: 800
+kp_cartesian_z: 1200
+
+kd_cartesian_x: 5
+kd_cartesian_y: 5
+kd_cartesian_z: 1
+
+body_height_stand: 0.24
+body_height_motion: 0.28
+
+body_opti_x: 1
+body_opti_y: 1
+body_opti_z: 10
+
+swing_height_walking: 0.05
+swing_height_climbing: 0.15
+
+jumping_height: 0.5
+prepare_height: 0.2
+takeoff_height: 0.35
+jumping_distance: 0.2

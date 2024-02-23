@@ -184,5 +184,5 @@ Stephen Brawner (brawner@gmail.com)
     <axis xyz="0 1 0" />
     <limit lower="-1.25" upper="2.61" effort="18" velocity="20" />
   </joint>
-  
+
 </robot>

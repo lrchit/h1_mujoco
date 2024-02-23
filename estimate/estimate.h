@@ -24,7 +24,8 @@ private:
                   Vector<double, 6> &v_end_effector_base,
                   Vector<double, 6> &p_end_effector_world,
                   Vector<double, 6> &v_end_effector_world,
-                  Vector<double, 6> Posture, Vector<double, 6> Velocity);
+                  Vector<double, 6> p_base_world,
+                  Vector<double, 6> v_base_world);
 
   bool cheater_mode;
 

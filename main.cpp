@@ -29,6 +29,7 @@
 #include "simulate.h"
 #include <mujoco/mujoco.h>
 
+#include "dynamics.hpp"
 #include "estimate.h"
 #include "iLQR.h"
 #include "pd_controller.h"
@@ -72,6 +73,7 @@ std::string yaml_name = "../controllers/iLQR/param.yaml";
 Cartpole_iLQR iLQR(yaml_name);
 H1Estm estimate;
 H1State state;
+FBDynModel _model;
 
 //---------------------------------------- plugin handling
 //-----------------------------------------
@@ -455,9 +457,35 @@ void ControlLoop(mj::Simulate &sim) {
 
         {
           // pd_controller(d);
-
-          // iLQR
-          // iLQR.get_control(d);
+          FBModelState state;
+          state.bodyOrientation << 1, 0, 0, 0;
+          state.bodyPosition << 0, 0, 0.98;
+          state.bodyVelocity << 0, 0, 0, 0, 0, 0;
+          state.q <<
+              // left leg
+              0,
+              0, -0.4, 0.8, -0.4,
+              // right leg
+              0, 0, -0.4, 0.8, -0.4,
+              // torso joint
+              0,
+              // left arm
+              0, 0, 0, 0,
+              // right arm
+              0, 0, 0, 0;
+          state.qd <<
+              // left leg
+              0,
+              0, 0, 0, 0,
+              // right leg
+              0, 0, 0, 0, 0,
+              // torso joint
+              0,
+              // left arm
+              0, 0, 0, 0,
+              // right arm
+              0, 0, 0, 0;
+          _model.updateModel(state);
         }
 
         std::this_thread::sleep_for(std::chrono::milliseconds(2));
@@ -557,8 +585,8 @@ void PhysicsThread(mj::Simulate *sim, const char *filename) {
     }
   }
   // Initialize joint velocities
-  // mj_forward(m, d);
-  // std::this_thread::sleep_for(std::chrono::milliseconds(5000000000));
+  mj_forward(m, d);
+  std::this_thread::sleep_for(std::chrono::milliseconds(5000000000));
 
   PhysicsLoop(*sim);
 

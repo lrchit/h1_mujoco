@@ -10,13 +10,11 @@ Stephen Brawner (brawner@gmail.com)
 
 
   <!-- [CAUTION] uncomment when convert to mujoco -->
-  <!-- <link name="world"></link>
+  <link name="world"></link>
   <joint name="floating_base_joint" type="floating">
     <parent link="world" />
     <child link="pelvis" />
-  </joint> -->
-
-
+  </joint>
   <link name="pelvis">
     <inertial>
       <origin xyz="-0.0002 4E-05 -0.04522" rpy="0 0 0" />
