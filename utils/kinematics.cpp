@@ -45,7 +45,7 @@ void kinematics::inverse_kin_frame(Vector<double, 5> &q, Vector<double, 5> &dq,
 
   // use Newton's Method to solve a root finding method
   Vector<double, 5> temp_q = q_init;
-  const double eps = 1e-4;       // convergence
+  const double eps = 1e-4;       // convergence tol
   const int IT_MAX = 1e4;        // max iter
   const double DT = 1e-1;        // damped Newton param
   const double threshold = 1e-4; // threshold for solving pseudo inverse
