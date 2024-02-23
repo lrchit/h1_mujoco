@@ -196,23 +196,23 @@ void H1Estm::cheater_compute_state(H1State &state, mjData *d) {
     state.hand_posture_world.col(i) = p_rel_world;
     state.hand_vel_general_world.col(i) = dp_rel_world;
   }
-  std::cout << "hand_posture = \n"
-            << state.hand_posture.col(0).transpose() << std::endl;
-  std::cout << "hand_posture_world = \n"
-            << state.hand_posture_world.col(0).transpose() << std::endl;
-  std::cout << "hand_vel_general = \n"
-            << state.hand_vel_general.col(0).transpose() << std::endl;
-  std::cout << "hand_vel_general_world = \n"
-            << state.hand_vel_general_world.col(0).transpose() << std::endl;
+  // std::cout << "hand_posture = \n"
+  //           << state.hand_posture.col(0).transpose() << std::endl;
+  // std::cout << "hand_posture_world = \n"
+  //           << state.hand_posture_world.col(0).transpose() << std::endl;
+  // std::cout << "hand_vel_general = \n"
+  //           << state.hand_vel_general.col(0).transpose() << std::endl;
+  // std::cout << "hand_vel_general_world = \n"
+  //           << state.hand_vel_general_world.col(0).transpose() << std::endl;
 
-  Vector<double, 5> qpos, qvel;
-  Vector<double, 6> x, dx;
-  x = state.hand_posture.col(0);
-  dx = state.hand_vel_general.col(0);
-  limb_kin[2].inverse_kin_frame(qpos, qvel, x, dx, frame_name[2],
-                                Vector<double, 5>(0, 0, 0, 0, 0));
-  std::cout << "arm_qpos = \n" << state.arm_qpos.transpose() << std::endl;
-  std::cout << "inverse q = \n" << qpos.transpose() << std::endl;
-  std::cout << "arm_qvel = \n" << state.arm_qvel.transpose() << std::endl;
-  std::cout << "inverse qvel = \n" << qvel.transpose() << std::endl;
+  // Vector<double, 5> qpos, qvel;
+  // Vector<double, 6> x, dx;
+  // x = state.hand_posture.col(0);
+  // dx = state.hand_vel_general.col(0);
+  // limb_kin[2].inverse_kin_frame(qpos, qvel, x, dx, frame_name[2],
+  //                               Vector<double, 5>(0, 0, 0, 0, 0));
+  // std::cout << "arm_qpos = \n" << state.arm_qpos.transpose() << std::endl;
+  // std::cout << "inverse q = \n" << qpos.transpose() << std::endl;
+  // std::cout << "arm_qvel = \n" << state.arm_qvel.transpose() << std::endl;
+  // std::cout << "inverse qvel = \n" << qvel.transpose() << std::endl;
 }
