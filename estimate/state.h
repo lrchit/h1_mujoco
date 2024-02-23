@@ -11,14 +11,14 @@ struct H1State {
     lin_acc.setZero();
     rot_mat.setZero();
 
-    foot_pos.setZero();
-    foot_vel.setZero();
-    foot_pos_world.setZero();
-    foot_vel_world.setZero();
-    hand_pos.setZero();
-    hand_vel.setZero();
-    hand_pos_world.setZero();
-    hand_vel_world.setZero();
+    foot_posture.setZero();
+    foot_vel_general.setZero();
+    foot_posture_world.setZero();
+    foot_vel_general_world.setZero();
+    hand_posture.setZero();
+    hand_vel_general.setZero();
+    hand_posture_world.setZero();
+    hand_vel_general_world.setZero();
 
     leg_qpos.setZero();
     leg_qvel.setZero();
@@ -40,14 +40,14 @@ struct H1State {
   Eigen::Vector3d lin_acc;
   Eigen::Matrix3d rot_mat;
 
-  Eigen::Matrix<double, 3, 2> foot_pos;
-  Eigen::Matrix<double, 3, 2> foot_vel;
-  Eigen::Matrix<double, 3, 2> foot_pos_world;
-  Eigen::Matrix<double, 3, 2> foot_vel_world;
-  Eigen::Matrix<double, 3, 2> hand_pos;
-  Eigen::Matrix<double, 3, 2> hand_vel;
-  Eigen::Matrix<double, 3, 2> hand_pos_world;
-  Eigen::Matrix<double, 3, 2> hand_vel_world;
+  Eigen::Matrix<double, 6, 2> foot_posture;
+  Eigen::Matrix<double, 6, 2> foot_vel_general;
+  Eigen::Matrix<double, 6, 2> foot_posture_world;
+  Eigen::Matrix<double, 6, 2> foot_vel_general_world;
+  Eigen::Matrix<double, 6, 2> hand_posture;
+  Eigen::Matrix<double, 6, 2> hand_vel_general;
+  Eigen::Matrix<double, 6, 2> hand_posture_world;
+  Eigen::Matrix<double, 6, 2> hand_vel_general_world;
 
   Eigen::Matrix<double, 5, 2> leg_qpos;
   Eigen::Matrix<double, 5, 2> leg_qvel;

@@ -20,9 +20,13 @@ public:
   void cheater_compute_state(H1State &state, mjData *d);
 
 private:
-  bool cheater_mode;
+  void base2world(Vector<double, 6> &p_end_effector_base,
+                  Vector<double, 6> &v_end_effector_base,
+                  Vector<double, 6> &p_end_effector_world,
+                  Vector<double, 6> &v_end_effector_world,
+                  Vector<double, 6> Posture, Vector<double, 6> Velocity);
 
-  H1State last_state;
+  bool cheater_mode;
 
   std::vector<FIRFilter> qvel_filter;
   double dt;

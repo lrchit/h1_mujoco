@@ -12,6 +12,7 @@
 #include "pinocchio/parsers/urdf.hpp"
 #include "pinocchio/spatial/explog.hpp"
 
+#include "orientation_tools.h"
 #include "pseudoInverse.h"
 
 using namespace Eigen;
@@ -25,19 +26,19 @@ public:
 
   // forward kin
   void forward_kin_frame(Vector<double, 5> q, Vector<double, 5> dq,
-                         Vector<double, 5> ddq, Vector3d &x, Vector3d &dx,
-                         Vector3d &ddx, std::string frame_name);
+                         Vector<double, 6> &x, Vector<double, 6> &dx,
+                         std::string frame_name);
 
   // inverse_kin
   void inverse_kin_frame(Vector<double, 5> &q, Vector<double, 5> &dq,
-                         Vector<double, 5> &ddq, Vector3d x, Vector3d dx,
-                         Vector3d ddx, std::string frame_name,
+                         Vector<double, 6> x, Vector<double, 6> dx,
+                         std::string frame_name,
                          Vector<double, 5> q_init = Vector<double, 5>(0, 0, 0,
                                                                       0, 0));
 
   pinocchio::Model model;
   pinocchio::Data data;
 
-  Matrix<double, 6, 5> get_leg_jacobian(Vector<double, 5> q,
-                                        std::string frame_name);
+  Matrix<double, 6, 5> get_limb_jacobian(Vector<double, 5> q,
+                                         std::string frame_name);
 };

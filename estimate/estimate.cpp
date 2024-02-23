@@ -20,6 +20,64 @@ H1Estm::H1Estm() {
   limb_kin.push_back(kinematics(filename[3]));
 }
 
+void H1Estm::base2world(Vector<double, 6> &p_end_effector_base,
+                        Vector<double, 6> &v_end_effector_base,
+                        Vector<double, 6> &p_end_effector_world,
+                        Vector<double, 6> &v_end_effector_world,
+                        Vector<double, 6> Posture, Vector<double, 6> Velocity) {
+
+  const Vector3d p_end_effector_base_linear =
+      p_end_effector_base.head<3>(); // 末端执行器在基座坐标系下的位置
+  const Vector3d p_end_effector_base_angular =
+      p_end_effector_base.tail<3>(); // 末端执行器在基座坐标系下的rpy
+  const Vector3d v_end_effector_base_linear =
+      v_end_effector_base.head<3>(); // 末端执行器相对于基座的线速度
+  const Vector3d v_end_effector_base_angular =
+      v_end_effector_base.tail<3>(); // 末端执行器相对于基座的角速度
+
+  // 基座姿态数据
+  const Vector3d p_base_world_linear =
+      Posture.head<3>(); // 基座在世界坐标系下的位置
+  const Vector3d p_base_world_angular =
+      Posture.tail<3>(); // 基座在世界坐标系下的rpy
+  const Vector3d v_base_world_linear =
+      Velocity.head<3>(); // 基座在世界坐标系下的线速度
+  const Vector3d v_base_world_angular =
+      Velocity.tail<3>(); // 基座在世界坐标系下的角速度
+
+  // 获取基座到世界坐标系的旋转矩阵 R_world_to_base
+  const Matrix3d R_world_to_base =
+      ori::rpyToRotMat(p_base_world_angular).transpose();
+  // 获取end到base系的旋转矩阵 R_base_to_end
+  const Matrix3d R_base_to_end =
+      ori::rpyToRotMat(p_end_effector_base_angular).transpose();
+
+  Vector3d p_end_effector_world_linear =
+      R_world_to_base * p_end_effector_base_linear + p_base_world_linear;
+  Matrix3d R_world_to_end = R_world_to_base * R_base_to_end;
+  Quat quat_world_to_end =
+      ori::rotationMatrixToQuaternion(R_world_to_end.transpose());
+
+  // 合并pos和rpy得到完整的p_end_effector_world向量
+  p_end_effector_world.head<3>() = p_end_effector_world_linear;
+  p_end_effector_world.tail<3>() = ori::quatToRPY(quat_world_to_end);
+
+  // 将末端执行器相对于基座的线速度转换到世界坐标系下
+  Vector3d v_end_effector_world_linear =
+      R_world_to_base * v_end_effector_base_linear.head<3>() +
+      v_base_world_linear;
+
+  // 角速度部分转换会更复杂一些，因为它涉及旋转向量的转动定律
+  // 如果末端执行器的角速度v_end_effector_base_angular是在基座坐标系下的，则在世界坐标系下的角速度应为：
+  Vector3d v_end_effector_world_angular =
+      R_world_to_base * v_end_effector_base_angular +
+      v_base_world_angular.cross(p_end_effector_base_linear);
+
+  // 合并线速度和角速度得到完整的速度向量
+  v_end_effector_world.head<3>() = v_end_effector_world_linear;
+  v_end_effector_world.tail<3>() = v_end_effector_world_angular;
+}
+
 // real value, need to transform if you use imu for rpy,
 // because pelvis is the center but imu is on torso
 void H1Estm::cheater_compute_state(H1State &state, mjData *d) {
@@ -30,28 +88,22 @@ void H1Estm::cheater_compute_state(H1State &state, mjData *d) {
   for (int i = 0; i < 3; ++i) {
     state.pos(i) = d->qpos[i];
   }
-  // std::cout << "pos = \n" << state.pos.transpose() << std::endl;
 
   // --- get rpy ---
   Vector<double, 4> q(d->qpos[3], d->qpos[4], d->qpos[5], d->qpos[6]);
   state.euler_angle = ori::quatToRPY(q);
   state.rot_mat = ori::quaternionToRotationMatrix(q);
-  // std::cout << "euler_angle = \n" << state.euler_angle.transpose() <<
-  // std::endl; std::cout << "q = \n" << q.transpose() << std::endl;
 
   // --- get linvel ---
   for (int i = 0; i < 3; ++i) {
     state.lin_vel(i) = d->qvel[i];
   }
-  // std::cout << "lin_vel = \n" << state.lin_vel.transpose() << std::endl;
 
   // --- get angvel ---
   for (int i = 0; i < 3; ++i) {
     state.euler_angle_vel(i) = d->qvel[3 + i];
   }
   state.euler_angle_vel = state.euler_angle_vel;
-  // std::cout << "euler_angle_vel = \n" << state.euler_angle_vel.transpose()
-  //           << std::endl;
 
   // --- get leg_qpos and leg_qvel ---
   int leg_joint_num = 5;
@@ -61,6 +113,7 @@ void H1Estm::cheater_compute_state(H1State &state, mjData *d) {
       state.leg_qvel(j, i) = d->qvel[leg_joint_num * i + j + 6];
     }
   }
+  // std::cout << "leg_qpos = \n" << state.leg_qpos.transpose() << std::endl;
 
   // --- get torso_qpos and torso_qvel ---
   state.torso_qpos = d->qpos[7 + 2 * leg_joint_num];
@@ -90,51 +143,76 @@ void H1Estm::cheater_compute_state(H1State &state, mjData *d) {
   frame_name.push_back("right_elbow_link");
 
   for (int i = 0; i < 2; ++i) {
-    Vector3d p_rel, dp_rel, ddp_rel;
+    Vector<double, 6> p_rel, dp_rel;
     limb_kin[i].forward_kin_frame(state.leg_qpos.col(i), state.leg_qvel.col(i),
-                                  Vector<double, 5>::Zero(), p_rel, dp_rel,
-                                  ddp_rel, frame_name[i]);
-    state.foot_pos.col(i) = p_rel;
-    state.foot_pos_world.col(i) =
-        state.rot_mat.transpose() * state.foot_pos.col(i) + state.pos;
-    state.foot_vel.col(i) = dp_rel;
-    state.foot_vel_world.col(i) =
-        state.rot_mat.transpose() * state.foot_vel.col(i) + state.lin_vel;
+                                  p_rel, dp_rel, frame_name[i]);
+    Vector<double, 6> Posture, Velocity;
+    Posture.head<3>() = state.pos;
+    Posture.tail<3>() = state.euler_angle;
+    Velocity.head<3>() = state.lin_vel;
+    Velocity.tail<3>() = state.euler_angle_vel;
+
+    Vector<double, 6> p_rel_world, dp_rel_world;
+    state.foot_posture.col(i) = p_rel;
+    state.foot_vel_general.col(i) = dp_rel;
+    base2world(p_rel, dp_rel, p_rel_world, dp_rel_world, Posture, Velocity);
+
+    state.foot_posture_world.col(i) = p_rel_world;
+    state.foot_vel_general_world.col(i) = dp_rel_world;
   }
-  Vector<double, 5> qpos, qvel, qacc;
-  Vector3d x, dx, ddx;
-  x = state.foot_pos.col(0);
-  dx = state.foot_vel.col(0);
-  limb_kin[0].inverse_kin_frame(qpos, qvel, qacc, x, dx, ddx, frame_name[0],
-                                last_state.leg_qpos.col(0));
-  std::cout << "leg_qpos = \n" << state.leg_qpos.transpose() << std::endl;
-  std::cout << "inverse q = \n" << qpos.transpose() << std::endl;
-  std::cout << "leg_qvel = \n" << state.leg_qvel.transpose() << std::endl;
-  std::cout << "inverse qvel = \n" << qvel.transpose() << std::endl;
+  // std::cout << "foot_posture = \n"
+  //           << state.foot_posture.col(0).transpose() << std::endl;
+  // std::cout << "foot_posture_world = \n"
+  //           << state.foot_posture_world.col(0).transpose() << std::endl;
+
+  // Vector<double, 5> qpos, qvel;
+  // Vector<double, 6> x, dx;
+  // x = state.foot_posture.col(0);
+  // dx = state.foot_vel_general.col(0);
+  // limb_kin[0].inverse_kin_frame(qpos, qvel, x, dx, frame_name[0],
+  //                               Vector<double, 5>(0, 0, -0.4, 0.8, -0.4));
+  // std::cout << "leg_qpos = \n" << state.leg_qpos.transpose() << std::endl;
+  // std::cout << "inverse q = \n" << qpos.transpose() << std::endl;
+  // std::cout << "leg_qvel = \n" << state.leg_qvel.transpose() << std::endl;
+  // std::cout << "inverse qvel = \n" << qvel.transpose() << std::endl;
 
   // --- get hand_pos, hand_vel ---
   for (int i = 0; i < 2; ++i) {
-    Vector3d p_rel, dp_rel, ddp_rel;
-    limb_kin[2 + i].forward_kin_frame(
-        state.arm_qpos.col(i), state.arm_qvel.col(i), Vector<double, 5>::Zero(),
-        p_rel, dp_rel, ddp_rel, frame_name[2 + i]);
-    state.hand_pos.col(i) = p_rel;
-    state.hand_pos_world.col(i) =
-        state.rot_mat.transpose() * state.hand_pos.col(i) + state.pos;
-    state.hand_vel.col(i) = dp_rel;
-    state.hand_vel_world.col(i) =
-        state.rot_mat.transpose() * state.hand_vel.col(i) + state.lin_vel;
-  }
-  // Vector<double, 5> qpos, qvel, qacc;
-  // Vector3d x, dx, ddx;
-  // x = state.hand_pos.col(0);
-  // dx = state.hand_vel.col(0);
-  // limb_kin[2].inverse_kin_frame(qpos, qvel, qacc, x, dx, ddx, frame_name[2],
-  //                               last_state.arm_qpos.col(2));
-  // std::cout << "arm_qpos = \n" << state.arm_qpos.transpose() << std::endl;
-  // std::cout << "inverse q = \n" << qpos.transpose() << std::endl;
-  // std::cout << "arm_qvel = \n" << state.arm_qvel.transpose() << std::endl;
-  // std::cout << "inverse qvel = \n" << qvel.transpose() << std::endl;
+    Vector<double, 6> p_rel, dp_rel;
+    limb_kin[2 + i].forward_kin_frame(state.arm_qpos.col(i),
+                                      state.arm_qvel.col(i), p_rel, dp_rel,
+                                      frame_name[2 + i]);
+    Vector<double, 6> Posture, Velocity;
+    Posture.head<3>() = state.pos;
+    Posture.tail<3>() = state.euler_angle;
+    Velocity.head<3>() = state.lin_vel;
+    Velocity.tail<3>() = state.euler_angle_vel;
 
-  last_state = state;
+    Vector<double, 6> p_rel_world, dp_rel_world;
+    state.hand_posture.col(i) = p_rel;
+    state.hand_vel_general.col(i) = dp_rel;
+    base2world(p_rel, dp_rel, p_rel_world, dp_rel_world, Posture, Velocity);
+
+    state.hand_posture_world.col(i) = p_rel_world;
+    state.hand_vel_general_world.col(i) = dp_rel_world;
+  }
+  std::cout << "hand_posture = \n"
+            << state.hand_posture.col(0).transpose() << std::endl;
+  std::cout << "hand_posture_world = \n"
+            << state.hand_posture_world.col(0).transpose() << std::endl;
+  std::cout << "hand_vel_general = \n"
+            << state.hand_vel_general.col(0).transpose() << std::endl;
+  std::cout << "hand_vel_general_world = \n"
+            << state.hand_vel_general_world.col(0).transpose() << std::endl;
+
+  Vector<double, 5> qpos, qvel;
+  Vector<double, 6> x, dx;
+  x = state.hand_posture.col(0);
+  dx = state.hand_vel_general.col(0);
+  limb_kin[2].inverse_kin_frame(qpos, qvel, x, dx, frame_name[2],
+                                Vector<double, 5>(0, 0, 0, 0, 0));
+  std::cout << "arm_qpos = \n" << state.arm_qpos.transpose() << std::endl;
+  std::cout << "inverse q = \n" << qpos.transpose() << std::endl;
+  std::cout << "arm_qvel = \n" << state.arm_qvel.transpose() << std::endl;
+  std::cout << "inverse qvel = \n" << qvel.transpose() << std::endl;
 }

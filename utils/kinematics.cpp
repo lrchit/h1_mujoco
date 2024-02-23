@@ -11,68 +11,67 @@ kinematics::kinematics(const std::string urdf_filename) {
 kinematics::~kinematics() {}
 
 void kinematics::forward_kin_frame(Vector<double, 5> q, Vector<double, 5> dq,
-                                   Vector<double, 5> ddq, Vector3d &x,
-                                   Vector3d &dx, Vector3d &ddx,
+                                   Vector<double, 6> &x, Vector<double, 6> &dx,
                                    std::string frame_name) {
 
-  pinocchio::FrameIndex id = model.getFrameId(frame_name);
+  pinocchio::FrameIndex JOINT_ID = model.getFrameId(frame_name);
 
-  pinocchio::forwardKinematics(model, data, q, dq, ddq);
+  pinocchio::forwardKinematics(model, data, q, dq);
   pinocchio::updateFramePlacements(model, data);
-  // pinocchio::framesForwardKinematics(model, data, q);
-  x = data.oMf[id].translation();
-  dx = pinocchio::getFrameVelocity(model, data, id,
-                                   pinocchio::LOCAL_WORLD_ALIGNED)
-           .linear();
 
-  ddx = pinocchio::getFrameAcceleration(model, data, id,
-                                        pinocchio::LOCAL_WORLD_ALIGNED)
-            .linear();
+  // 获取末端位姿
+  const pinocchio::SE3 &end_effector_placement = data.oMf[JOINT_ID];
+
+  x.segment(0, 3) = end_effector_placement.translation();
+
+  Matrix3d rot_mat(end_effector_placement.rotation());
+  Quat quat_end_to_base = ori::rotationMatrixToQuaternion(rot_mat);
+  x.segment(3, 3) = ori::quatToRPY(quat_end_to_base);
+
+  // 计算并获取末端执行器的速度向量（包含线速度和角速度）
+  dx = pinocchio::getFrameVelocity(model, data, JOINT_ID,
+                                   pinocchio::LOCAL_WORLD_ALIGNED);
 
   // std::cout<<'\n'<<"x: "<<x.transpose()<< '\n'<<"dx "<< \
-    // dx.transpose()<<'\n'<<"ddx"<<ddx.transpose()<<std::endl;
+    // dx.transpose()<<'\n'<<"dx"<<dx.transpose()<<std::endl;
 }
 
 void kinematics::inverse_kin_frame(Vector<double, 5> &q, Vector<double, 5> &dq,
-                                   Vector<double, 5> &ddq, Vector3d x,
-                                   Vector3d dx, Vector3d ddx,
+                                   Vector<double, 6> x, Vector<double, 6> dx,
                                    std::string frame_name,
                                    Vector<double, 5> q_init) {
 
-  pinocchio::FrameIndex id = model.getFrameId(frame_name);
+  pinocchio::FrameIndex JOINT_ID = model.getFrameId(frame_name);
 
+  // use Newton's Method to solve a root finding method
   Vector<double, 5> temp_q = q_init;
-  const double eps = 1e-4;
-  const int IT_MAX = 1e3;
-  const double DT = 1e-1;
-  const double damp = 1e-6;
-  const double threshold = 0.001;
+  const double eps = 1e-4;       // convergence
+  const int IT_MAX = 1e4;        // max iter
+  const double DT = 1e-1;        // damped Newton param
+  const double threshold = 1e-4; // threshold for solving pseudo inverse
 
-  pinocchio::SE3 oMdes(Matrix3d::Identity(), x);
+  Matrix3d rot_mat(ori::rpyToRotMat(x.segment(3, 3)));
+  Vector3d l(x.segment(0, 3));
+  pinocchio::SE3 oMdes(rot_mat, l);
   bool success = false;
 
-  Vector3d err;
+  Vector<double, 6> err;
   pinocchio::Data::Matrix6x J(6, model.nv);
-  pinocchio::Data::Matrix6x dJ(6, model.nv);
-  MatrixXd J_(3, 5);
-  MatrixXd J_inverse(5, 3);
-  // Matrix<double,6,model.nv> dJ;
+  MatrixXd J_inverse(5, 6);
   J.setZero();
-  dJ.setZero();
-  int i = 0;
-  for (i = 0; i < IT_MAX; i++) {
+
+  // Newton's Method(damped Newton)
+  for (int i = 0; i < IT_MAX; i++) {
     pinocchio::forwardKinematics(model, data, temp_q);
-    pinocchio::computeJointJacobians(
-        model, data,
-        temp_q); // if we use this ,we can get frame or joint jacobian
+    pinocchio::computeJointJacobians(model, data, temp_q);
 
     pinocchio::updateFramePlacements(model, data);
-    pinocchio::getFrameJacobian(model, data, id, pinocchio::LOCAL_WORLD_ALIGNED,
-                                J); // cal this, you need forwardKinematics
+    pinocchio::getFrameJacobian(model, data, JOINT_ID,
+                                pinocchio::LOCAL_WORLD_ALIGNED, J);
 
-    pinocchio::SE3 T_temp = data.oMf[id];
-    err = oMdes.translation() -
-          T_temp.translation(); // must compute the forward kinematics
+    // err = log(Trans_new.inverse - Trans_old)
+    const pinocchio::SE3 iMd = data.oMf[JOINT_ID].actInv(oMdes);
+    err = pinocchio::log6(iMd).toVector();
 
     if (err.norm() < eps) {
       success = true;
@@ -83,13 +82,11 @@ void kinematics::inverse_kin_frame(Vector<double, 5> &q, Vector<double, 5> &dq,
       break;
     }
 
-    J_ = J.block(0, 0, 3, 5);
-    pseudoInverse(J_, threshold, J_inverse);
-    dq = J_inverse * err;
-    temp_q = pinocchio::integrate(model, temp_q, dq * DT);
-
-    //  if(!(i%10))
-    //  std::cout << i << ": error = " << err.transpose() << std::endl;
+    // delta_q = jacobian.inverse * err
+    pseudoInverse(J, threshold, J_inverse);
+    Vector<double, 5> delta_q(J_inverse * err);
+    // update q_new
+    temp_q = pinocchio::integrate(model, temp_q, delta_q * DT);
   }
 
   // if (success) {
@@ -101,31 +98,21 @@ void kinematics::inverse_kin_frame(Vector<double, 5> &q, Vector<double, 5> &dq,
   // }
 
   q = temp_q;
-  J_ = J.block(0, 0, 3, 5);
+  pinocchio::forwardKinematics(model, data, q);
+  pinocchio::computeJointJacobians(model, data, q);
+  pinocchio::updateFramePlacements(model, data);
+  pinocchio::getFrameJacobian(model, data, JOINT_ID,
+                              pinocchio::LOCAL_WORLD_ALIGNED, J);
+  pseudoInverse(J, threshold, J_inverse);
   dq = J_inverse * dx;
-  // pinocchio::computeJointJacobiansTimeVariation(
-  //     model, data, q, dq); // if we use this .we can get frame or joint
-  //                          // derviation of jacobians
-  // pinocchio::getFrameJacobianTimeVariation(
-  //     model, data, id, pinocchio::LOCAL_WORLD_ALIGNED,
-  //     dJ); // this can replace getframejacobian
-
-  // ddq = J.block(0, 0, 3, 5).inverse() * (ddx - (dJ * dq).block(0, 0, 3, 1));
-  // std::cout << "dj" << dJ << std::endl;
-  // std::cout << "\nresult: " << q.transpose() << dq.transpose() << "ddq"
-  //           << ddq.transpose() << std::endl;
-  // std::cout << "    i =   " << i << std::endl;
-  // std::cout << "\nfinal error: " << err.transpose() << std::endl;
 }
 
-Matrix<double, 6, 5> kinematics::get_leg_jacobian(Vector<double, 5> q,
-                                                  std::string frame_name) {
+Matrix<double, 6, 5> kinematics::get_limb_jacobian(Vector<double, 5> q,
+                                                   std::string frame_name) {
 
   pinocchio::FrameIndex id = model.getFrameId(frame_name);
 
   pinocchio::Data::Matrix6x J(6, model.nv);
-  // pinocchio::Data::Matrix6x dJ(6,model.nv);
-  // Matrix<double,6,6> dJ;
   J.setZero();
   pinocchio::forwardKinematics(model, data, q);
 
