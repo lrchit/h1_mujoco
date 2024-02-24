@@ -24,6 +24,7 @@ MotionPlanning::MotionPlanning() {
   kdCartesian(4, 4) = config["kd_cartesian_p"].as<double>();
   kdCartesian(5, 5) = config["kd_cartesian_y"].as<double>();
 
+  dt = 0.001;
   dtmpc = dt * config["iteration_between_mpc"].as<int>();
 
   firstRun = true;

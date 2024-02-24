@@ -31,7 +31,7 @@ private:
                         Gait *gait, double swing_height);
 
   bool omniMode;
-  double dt = 0.001;
+  double dt;
   double dtmpc;
 
   Matrix<double, 6, 6> kpCartesian;

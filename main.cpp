@@ -458,7 +458,7 @@ void FSMLoop(mj::Simulate &sim) {
           }
         }
 
-        std::this_thread::sleep_for(std::chrono::milliseconds(2));
+        std::this_thread::sleep_for(std::chrono::milliseconds(1));
 
         // std::chrono::time_point<std::chrono::system_clock> t_end =
         //     std::chrono::system_clock::now();
@@ -493,7 +493,7 @@ void MpcLoop(mj::Simulate &sim) {
             //         .count();
             // std::cout << "mpc_time: " << time_record / 1000 << "\n";
           } else
-            std::this_thread::sleep_for(std::chrono::milliseconds(2));
+            std::this_thread::sleep_for(std::chrono::milliseconds(1));
         }
       }
     }
@@ -516,7 +516,7 @@ void EstimateLoop(mj::Simulate &sim) {
           FSM.state_estimate(d);
         }
 
-        std::this_thread::sleep_for(std::chrono::milliseconds(2));
+        std::this_thread::sleep_for(std::chrono::milliseconds(1));
 
         // std::chrono::time_point<std::chrono::system_clock> t_end =
         //     std::chrono::system_clock::now();
