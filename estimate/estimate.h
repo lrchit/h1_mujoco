@@ -15,21 +15,23 @@ using namespace Eigen;
 
 class H1Estm {
 public:
-  H1Estm();
+  H1Estm(std::vector<kinematics> _limb_kin);
+
+  void call_state_estimator(H1State &state, mjData *d);
 
   void cheater_compute_state(H1State &state, mjData *d);
+  void EKF_compute_state(H1State &state, mjData *d);
 
 private:
-  void base2world(Vector<double, 6> &p_end_effector_base,
-                  Vector<double, 6> &v_end_effector_base,
-                  Vector<double, 6> &p_end_effector_world,
-                  Vector<double, 6> &v_end_effector_world,
-                  Vector<double, 6> p_base_world,
-                  Vector<double, 6> v_base_world);
+  void base_to_world(Vector<double, 6> &p_end_effector_base,
+                     Vector<double, 6> &v_end_effector_base,
+                     Vector<double, 6> &p_end_effector_world,
+                     Vector<double, 6> &v_end_effector_world,
+                     Vector<double, 6> p_base_world,
+                     Vector<double, 6> v_base_world);
 
   bool cheater_mode;
 
-  std::vector<FIRFilter> qvel_filter;
   double dt;
 
   std::vector<kinematics> limb_kin;

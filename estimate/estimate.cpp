@@ -2,30 +2,20 @@
 #include <chrono>
 #include <iostream>
 
-H1Estm::H1Estm() {
+H1Estm::H1Estm(std::vector<kinematics> _limb_kin) {
   YAML::Node config = YAML::LoadFile("../estimate/esti_config.yaml");
-  dt = 0.0005;
+  dt = 0.001;
   cheater_mode = config["cheater_mode"].as<bool>();
 
-  qvel_filter.resize(16);
-
-  std::vector<std::string> filename;
-  filename.push_back("../h1_description/urdf/h1_left_leg.urdf");
-  filename.push_back("../h1_description/urdf/h1_right_leg.urdf");
-  filename.push_back("../h1_description/urdf/h1_left_arm.urdf");
-  filename.push_back("../h1_description/urdf/h1_right_arm.urdf");
-  limb_kin.push_back(kinematics(filename[0]));
-  limb_kin.push_back(kinematics(filename[1]));
-  limb_kin.push_back(kinematics(filename[2]));
-  limb_kin.push_back(kinematics(filename[3]));
+  limb_kin = _limb_kin;
 }
 
-void H1Estm::base2world(Vector<double, 6> &p_end_effector_base,
-                        Vector<double, 6> &v_end_effector_base,
-                        Vector<double, 6> &p_end_effector_world,
-                        Vector<double, 6> &v_end_effector_world,
-                        Vector<double, 6> p_base_world,
-                        Vector<double, 6> v_base_world) {
+void H1Estm::base_to_world(Vector<double, 6> &p_end_effector_base,
+                           Vector<double, 6> &v_end_effector_base,
+                           Vector<double, 6> &p_end_effector_world,
+                           Vector<double, 6> &v_end_effector_world,
+                           Vector<double, 6> p_base_world,
+                           Vector<double, 6> v_base_world) {
 
   const Vector3d p_end_effector_base_linear =
       p_end_effector_base.head<3>(); // 末端执行器在基座坐标系下的位置
@@ -89,6 +79,7 @@ void H1Estm::cheater_compute_state(H1State &state, mjData *d) {
   for (int i = 0; i < 3; ++i) {
     state.pos(i) = d->qpos[i];
   }
+  // std::cout << "state.pos = \n" << state.pos.transpose() << std::endl;
 
   // --- get rpy ---
   Vector<double, 4> q(d->qpos[3], d->qpos[4], d->qpos[5], d->qpos[6]);
@@ -156,8 +147,8 @@ void H1Estm::cheater_compute_state(H1State &state, mjData *d) {
     Vector<double, 6> p_rel_world, dp_rel_world;
     state.foot_pos_base.col(i) = p_rel;
     state.foot_vel_base.col(i) = dp_rel;
-    base2world(p_rel, dp_rel, p_rel_world, dp_rel_world, p_base_world,
-               v_base_world);
+    base_to_world(p_rel, dp_rel, p_rel_world, dp_rel_world, p_base_world,
+                  v_base_world);
 
     state.foot_pos_world.col(i) = p_rel_world;
     state.foot_vel_world.col(i) = dp_rel_world;
@@ -193,8 +184,8 @@ void H1Estm::cheater_compute_state(H1State &state, mjData *d) {
     Vector<double, 6> p_rel_world, dp_rel_world;
     state.hand_pos_base.col(i) = p_rel;
     state.hand_vel_base.col(i) = dp_rel;
-    base2world(p_rel, dp_rel, p_rel_world, dp_rel_world, p_base_world,
-               v_base_world);
+    base_to_world(p_rel, dp_rel, p_rel_world, dp_rel_world, p_base_world,
+                  v_base_world);
 
     state.hand_pos_world.col(i) = p_rel_world;
     state.hand_vel_world.col(i) = dp_rel_world;
@@ -218,4 +209,9 @@ void H1Estm::cheater_compute_state(H1State &state, mjData *d) {
   // std::cout << "inverse q = \n" << qpos.transpose() << std::endl;
   // std::cout << "arm_qvel = \n" << state.arm_qvel.transpose() << std::endl;
   // std::cout << "inverse qvel = \n" << qvel.transpose() << std::endl;
+}
+
+void H1Estm::call_state_estimator(H1State &state, mjData *d) {
+  if (cheater_mode)
+    cheater_compute_state(state, d);
 }

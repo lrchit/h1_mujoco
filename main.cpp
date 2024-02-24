@@ -29,10 +29,7 @@
 #include "simulate.h"
 #include <mujoco/mujoco.h>
 
-#include "dynamics.hpp"
-#include "estimate.h"
-#include "iLQR.h"
-#include "pd_controller.h"
+#include "FSM.h"
 
 #define MUJOCO_PLUGIN_DIR "mujoco_plugin"
 #define pi 3.1416
@@ -69,11 +66,7 @@ mjtNum *ctrlnoise = nullptr;
 
 using Seconds = std::chrono::duration<double>;
 
-std::string yaml_name = "../controllers/iLQR/param.yaml";
-Cartpole_iLQR iLQR(yaml_name);
-H1Estm estimate;
-H1State state;
-FBDynModel _model;
+H1FSM FSM;
 
 //---------------------------------------- plugin handling
 //-----------------------------------------
@@ -446,7 +439,7 @@ void PhysicsLoop(mj::Simulate &sim) {
 }
 } // namespace
 
-void ControlLoop(mj::Simulate &sim) {
+void FSMLoop(mj::Simulate &sim) {
 
   while (!sim.exitrequest.load()) {
     if (!sim.uiloadrequest.load()) {
@@ -456,36 +449,13 @@ void ControlLoop(mj::Simulate &sim) {
         //     std::chrono::system_clock::now();
 
         {
-          // pd_controller(d);
-          FBModelState state;
-          state.bodyOrientation << 1, 0, 0, 0;
-          state.bodyPosition << 0, 0, 0.98;
-          state.bodyVelocity << 0, 0, 0, 0, 0, 0;
-          state.q <<
-              // left leg
-              0,
-              0, -0.4, 0.8, -0.4,
-              // right leg
-              0, 0, -0.4, 0.8, -0.4,
-              // torso joint
-              0,
-              // left arm
-              0, 0, 0, 0,
-              // right arm
-              0, 0, 0, 0;
-          state.qd <<
-              // left leg
-              0,
-              0, 0, 0, 0,
-              // right leg
-              0, 0, 0, 0, 0,
-              // torso joint
-              0,
-              // left arm
-              0, 0, 0, 0,
-              // right arm
-              0, 0, 0, 0;
-          _model.updateModel(state);
+          FSM.main_program();
+
+          for (int i = 0; i < 2; ++i) {
+            for (int j = 0; j < 5; ++j) {
+              d->ctrl[i * 5 + j] = FSM.get_joint_torques()(i * 5 + j);
+            }
+          }
         }
 
         std::this_thread::sleep_for(std::chrono::milliseconds(2));
@@ -496,7 +466,35 @@ void ControlLoop(mj::Simulate &sim) {
         //     std::chrono::duration_cast<std::chrono::milliseconds>(t_end -
         //                                                           t_start)
         //         .count();
-        // std::cout << "controller_time: " << time_record / 1000 << "\n";
+        // std::cout << "FSM_time: " << time_record / 1000 << "\n";
+      }
+    }
+  }
+}
+
+void MpcLoop(mj::Simulate &sim) {
+
+  while (!sim.exitrequest.load()) {
+    if (!sim.uiloadrequest.load()) {
+      if (d != nullptr) {
+
+        // std::chrono::time_point<std::chrono::system_clock> t_start =
+        //     std::chrono::system_clock::now();
+
+        {
+          if (FSM.mpc_update_needed) {
+            FSM.compute_mpc();
+
+            // std::chrono::time_point<std::chrono::system_clock> t_end =
+            //     std::chrono::system_clock::now();
+            // double time_record =
+            //     std::chrono::duration_cast<std::chrono::milliseconds>(t_end -
+            //                                                           t_start)
+            //         .count();
+            // std::cout << "mpc_time: " << time_record / 1000 << "\n";
+          } else
+            std::this_thread::sleep_for(std::chrono::milliseconds(2));
+        }
       }
     }
   }
@@ -514,9 +512,8 @@ void EstimateLoop(mj::Simulate &sim) {
         //     std::chrono::system_clock::now();
 
         {
-
           // estimate
-          estimate.cheater_compute_state(state, d);
+          FSM.state_estimate(d);
         }
 
         std::this_thread::sleep_for(std::chrono::milliseconds(2));
@@ -527,7 +524,7 @@ void EstimateLoop(mj::Simulate &sim) {
         //     std::chrono::duration_cast<std::chrono::milliseconds>(t_end -
         //                                                           t_start)
         //         .count();
-        // std::cout << "controller_time: " << time_record / 1000 << "\n";
+        // std::cout << "estimate_time: " << time_record / 1000 << "\n";
       }
     }
   }
@@ -546,14 +543,6 @@ void PhysicsThread(mj::Simulate *sim, const char *filename) {
     if (d) {
       sim->Load(m, d, filename);
       mj_forward(m, d);
-
-      YAML::Node config = YAML::LoadFile(yaml_name);
-      // Initial state
-      Vector4d initial_state;
-      initial_state(0) = config["initial_state"]["pos"].as<double>();
-      initial_state(1) = config["initial_state"]["theta"].as<double>();
-      initial_state(2) = config["initial_state"]["vel"].as<double>();
-      initial_state(3) = config["initial_state"]["omega"].as<double>();
 
       // 设置初始状态（可选）
       // Initialize joint positions
@@ -585,8 +574,8 @@ void PhysicsThread(mj::Simulate *sim, const char *filename) {
     }
   }
   // Initialize joint velocities
-  mj_forward(m, d);
-  std::this_thread::sleep_for(std::chrono::milliseconds(5000000000));
+  // mj_forward(m, d);
+  // std::this_thread::sleep_for(std::chrono::milliseconds(5000000000));
 
   PhysicsLoop(*sim);
 
@@ -596,19 +585,20 @@ void PhysicsThread(mj::Simulate *sim, const char *filename) {
   mj_deleteModel(m);
 }
 
-//-------------------------------------- control_thread
+//-------------------------------------- FSM_thread
 //--------------------------------------------
 
-void ControlThread(mj::Simulate *sim, const char *filename) {
-  ControlLoop(*sim);
-}
+void FSMThread(mj::Simulate *sim) { FSMLoop(*sim); }
+
+//-------------------------------------- FSM_thread
+//--------------------------------------------
+
+void MpcThread(mj::Simulate *sim) { MpcLoop(*sim); }
 
 //-------------------------------------- estimate_thread
 //--------------------------------------------
 
-void EstimateThread(mj::Simulate *sim, const char *filename) {
-  EstimateLoop(*sim);
-}
+void EstimateThread(mj::Simulate *sim) { EstimateLoop(*sim); }
 
 //------------------------------------------ main
 //--------------------------------------------------
@@ -666,15 +656,18 @@ int main(int argc, char **argv) {
 
   // start physics thread
   std::thread physicsthreadhandle(&PhysicsThread, sim.get(), filename);
-  // start control thread
-  std::thread controlthreadhandle(&ControlThread, sim.get(), filename);
+  // start FSM thread
+  std::thread FSMthreadhandle(&FSMThread, sim.get());
+  // start mpc thread
+  std::thread mpcthreadhandle(&MpcThread, sim.get());
   // start etsimate thread
-  std::thread estimatethreadhandle(&EstimateThread, sim.get(), filename);
+  std::thread estimatethreadhandle(&EstimateThread, sim.get());
 
   // start simulation UI loop (blocking call)
   sim->RenderLoop();
   physicsthreadhandle.join();
-  controlthreadhandle.join();
+  FSMthreadhandle.join();
+  mpcthreadhandle.join();
   estimatethreadhandle.join();
 
   return 0;

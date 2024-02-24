@@ -2,13 +2,13 @@
 #include <chrono>
 
 // 求反对称阵
-Matrix3d QuadMpc::skew(Vector3d vec) {
+Matrix3d H1Mpc::skew(Vector3d vec) {
   Matrix3d skew_mat;
   skew_mat << 0, -vec(2), vec(1), vec(2), 0, -vec(0), -vec(1), vec(0), 0;
   return skew_mat;
 }
 
-QuadMpc::QuadMpc(int _horizon) {
+H1Mpc::H1Mpc(int _horizon) {
 
   YAML::Node config = YAML::LoadFile("../controllers/mpc_config.yaml");
 
@@ -85,25 +85,24 @@ QuadMpc::QuadMpc(int _horizon) {
   lb.setZero(constraint_num * horizon);
   ub.setZero(constraint_num * horizon);
 
-  inertia << 6.09519, 0, 0.565, 0, 5.402, -0.011, 0.565, -0.011, 1.26229;
-  mass = 51.601;
+  inertia << 6.095, 0, 0.565, 0, 5.402, -0.011, 0.565, -0.011, 1.262;
+  mass = 10000;
 }
 
 // 更新mpc参数
-void QuadMpc::update_mpc(Matrix<double, 6, 2> foot_pos, VectorXd state_des,
-                         Vector<double, 13> state_cur,
-                         Matrix<int, -1, 2> gait_table, double x_drag,
-                         double dt) {
+void H1Mpc::update_mpc(Matrix<double, 3, 2> foot_pos, VectorXd state_des,
+                       Vector<double, 13> state_cur,
+                       Matrix<int, -1, 2> gait_table, double x_drag,
+                       double dt) {
 
   // std::cout << "************* mpc_control *************" << std::endl;
-  // std::cout << "state_cur\n"
-  //           << state_cur.block(3, 0, 3, 1).transpose() << std::endl;
+  // std::cout << "state_cur\n" << state_cur.transpose() << std::endl;
   // std::cout << "state_des\n"
-  //           << state_des.block(3, 0, 3, 1).transpose() << std::endl;
+  //           << state_des.block(0, 0, 12, 1).transpose() << std::endl;
   // std::cout << "foot_pos\n"
   //           << foot_pos.block(0, 0, 3, 1).transpose() << std::endl;
   // std::cout << "foot_pos\n"
-  //           << foot_pos.block(0, 3, 3, 1).transpose() << std::endl;
+  //           << foot_pos.block(0, 1, 3, 1).transpose() << std::endl;
 
   // 计算连续形式的A,B
   Matrix3d trans_mat;
@@ -128,16 +127,17 @@ void QuadMpc::update_mpc(Matrix<double, 6, 2> foot_pos, VectorXd state_des,
 
   Matrix3d rot_mat;
   rot_mat = ori::rpyToRotMat(state_cur.block(0, 0, 3, 1)).transpose();
-  Matrix3d inertia_world, inertia_inv;
+  Matrix3d inertia_world, inertia_world_inv;
   inertia_world = rot_mat * inertia * rot_mat.transpose();
-  inertia_inv = inertia.inverse();
+  inertia_world_inv = inertia.inverse();
   Matrix3d L = Matrix3d::Identity();
   for (int i = 0; i < 2; ++i) {
-    B_mat_c.block(6, 6 * i, 3, 3) =
-        inertia_inv * skew(foot_pos.block(0, i, 3, 1));
-    B_mat_c.block(6, 6 * i + 3, 3, 3) = L * inertia_inv;
+    B_mat_c.block(6, 6 * i, 3, 3) = inertia_world_inv * skew(foot_pos.col(i));
+    B_mat_c.block(6, 6 * i + 3, 3, 3) = L * inertia_world_inv;
     B_mat_c.block(9, 6 * i, 3, 3) = (1 / mass) * Matrix3d::Identity();
   }
+  // std::cout << "B = \n" << B_mat_c << std::endl;
+  // std::cout << "A = \n" << A_mat_c << std::endl;
 
   // 离散化A,B
   A_mat_d = Matrix<double, 13, 13>::Identity() + A_mat_c * dt;
@@ -145,7 +145,7 @@ void QuadMpc::update_mpc(Matrix<double, 6, 2> foot_pos, VectorXd state_des,
 
   // 摩擦力上下界
   double fz_min = 0;
-  double fz_max = 500;
+  double fz_max = 1000;
   double tau_x_max = 500;
   double tau_y_max = 500;
   double tau_z_max = 500;
@@ -165,6 +165,8 @@ void QuadMpc::update_mpc(Matrix<double, 6, 2> foot_pos, VectorXd state_des,
     }
     lb.segment(i * constraint_num, constraint_num) = lb_one_horizon;
     ub.segment(i * constraint_num, constraint_num) = ub_one_horizon;
+    // std::cout << "gait_table = \n" << gait_table << std::endl;
+    // std::cout << "ub_one_horizon = \n" << ub_one_horizon << std::endl;
   }
   // A_qp,B_qp
   TempA.setIdentity();
@@ -198,7 +200,7 @@ void QuadMpc::update_mpc(Matrix<double, 6, 2> foot_pos, VectorXd state_des,
 }
 
 // 解mpc
-void QuadMpc::solve_mpc() {
+void H1Mpc::solve_mpc() {
 
   if (!qp_solver.isInitialized()) {
     qp_solver.settings()->setVerbosity(false);
@@ -223,7 +225,7 @@ void QuadMpc::solve_mpc() {
   // std::cout << "return_value" << qp_solver.getObjValue() << std::endl;
 }
 
-Vector<double, 12> QuadMpc::get_solution() {
+Vector<double, 12> H1Mpc::get_solution() {
 
   Vector<double, 12> _solution = qp_solver.getSolution().segment(0, 12);
   if (!std::isnan(_solution.norm()))
@@ -231,4 +233,4 @@ Vector<double, 12> QuadMpc::get_solution() {
 
   return solution;
 }
-VectorXd QuadMpc::get_solution_trajectory() { return qp_solver.getSolution(); }
+VectorXd H1Mpc::get_solution_trajectory() { return qp_solver.getSolution(); }

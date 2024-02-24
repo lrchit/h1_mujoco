@@ -1,14 +1,12 @@
 
 omniMode: false
 
-use_wbc: true
+use_wbc: false
 
-use_body_opti: true
 
-horizon: 20
+horizon: 10
 constraint_num: 16
 iteration_between_mpc: 13
-iteration_between_body_opti: 2
 
 q1: 0.25
 q2: 0.25
@@ -33,22 +31,19 @@ r6: 1e-6
 kp_cartesian_x: 2000
 kp_cartesian_y: 800
 kp_cartesian_z: 1200
+kp_cartesian_r: 2000
+kp_cartesian_p: 800
+kp_cartesian_y: 1200
 
 kd_cartesian_x: 5
 kd_cartesian_y: 5
 kd_cartesian_z: 1
+kd_cartesian_r: 5
+kd_cartesian_p: 5
+kd_cartesian_y: 1
 
-body_height_stand: 0.24
-body_height_motion: 0.28
+body_height_stand: 0.98
+body_height_motion: 0.98
 
-body_opti_x: 1
-body_opti_y: 1
-body_opti_z: 10
+swing_height_walking: 0.1
 
-swing_height_walking: 0.05
-swing_height_climbing: 0.15
-
-jumping_height: 0.5
-prepare_height: 0.2
-takeoff_height: 0.35
-jumping_distance: 0.2

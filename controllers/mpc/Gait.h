@@ -1,19 +1,19 @@
-#ifndef PROJECT_GAIT_H
-#define PROJECT_GAIT_H
+
+#pragma once
 
 #include <Eigen/Eigen>
 #include <queue>
 #include <string>
 
-using Eigen::Array4d;
-using Eigen::Array4i;
+using Eigen::Array2d;
+using Eigen::Array2i;
 
 class Gait {
 public:
   virtual ~Gait() = default;
 
-  virtual Eigen::Vector<double, 4> getContactState() = 0;
-  virtual Eigen::Vector<double, 4> getSwingState() = 0;
+  virtual Eigen::Vector<double, 2> getContactState() = 0;
+  virtual Eigen::Vector<double, 2> getSwingState() = 0;
   virtual int *getMpcTable() = 0;
   virtual void setIterations(int iterationsBetweenMPC,
                              int currentIteration) = 0;
@@ -28,11 +28,11 @@ protected:
 
 class OffsetDurationGait : public Gait {
 public:
-  OffsetDurationGait(int nSegment, Eigen::Vector<int, 4> offset,
-                     Eigen::Vector<int, 4> durations, const std::string &name);
+  OffsetDurationGait(int nSegment, Eigen::Vector<int, 2> offset,
+                     Eigen::Vector<int, 2> durations, const std::string &name);
   ~OffsetDurationGait();
-  Eigen::Vector<double, 4> getContactState();
-  Eigen::Vector<double, 4> getSwingState();
+  Eigen::Vector<double, 2> getContactState();
+  Eigen::Vector<double, 2> getSwingState();
   int *getMpcTable();
   void setIterations(int iterationsBetweenMPC, int currentIteration);
   double getCurrentStanceTime(double dtMPC, int leg);
@@ -42,10 +42,10 @@ public:
 
 private:
   int *_mpc_table;
-  Array4i _offsets;         // offset in mpc segments
-  Array4i _durations;       // duration of step in mpc segments
-  Array4d _offsetsDouble;   // offsets in phase (0 to 1)
-  Array4d _durationsDouble; // durations in phase (0 to 1)
+  Array2i _offsets;         // offset in mpc segments
+  Array2i _durations;       // duration of step in mpc segments
+  Array2d _offsetsDouble;   // offsets in phase (0 to 1)
+  Array2d _durationsDouble; // durations in phase (0 to 1)
   int _stance;
   int _swing;
   int _iteration;
@@ -55,11 +55,11 @@ private:
 
 class MixedFrequncyGait : public Gait {
 public:
-  MixedFrequncyGait(int nSegment, Eigen::Vector<int, 4> periods,
+  MixedFrequncyGait(int nSegment, Eigen::Vector<int, 2> periods,
                     double duty_cycle, const std::string &name);
   ~MixedFrequncyGait();
-  Eigen::Vector<double, 4> getContactState();
-  Eigen::Vector<double, 4> getSwingState();
+  Eigen::Vector<double, 2> getContactState();
+  Eigen::Vector<double, 2> getSwingState();
   int *getMpcTable();
   void setIterations(int iterationsBetweenMPC, int currentIteration);
   double getCurrentStanceTime(double dtMPC, int leg);
@@ -70,10 +70,8 @@ public:
 private:
   double _duty_cycle;
   int *_mpc_table;
-  Array4i _periods;
-  Array4d _phase;
+  Array2i _periods;
+  Array2d _phase;
   int _iteration;
   int _nIterations;
 };
-
-#endif // PROJECT_GAIT_H

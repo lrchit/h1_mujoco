@@ -116,12 +116,11 @@ Matrix<double, 6, 5> kinematics::get_limb_jacobian(Vector<double, 5> q,
   J.setZero();
   pinocchio::forwardKinematics(model, data, q);
 
-  pinocchio::computeJointJacobians(
-      model, data, q); // if we use this ,we can get frame or joint jocobians
+  pinocchio::computeJointJacobians(model, data, q);
   pinocchio::updateFramePlacements(model, data);
 
   pinocchio::getFrameJacobian(model, data, id, pinocchio::LOCAL_WORLD_ALIGNED,
-                              J); // cal this, you need forwardKinematics
+                              J);
 
   return J;
 }

@@ -12,12 +12,12 @@
 
 using namespace Eigen;
 
-class QuadMpc {
+class H1Mpc {
 public:
-  QuadMpc(int _horizon);
-  ~QuadMpc(){};
+  H1Mpc(int _horizon);
+  ~H1Mpc(){};
 
-  void update_mpc(Matrix<double, 6, 2> foot_pos, VectorXd state_des,
+  void update_mpc(Matrix<double, 3, 2> foot_pos, VectorXd state_des,
                   Vector<double, 13> state_cur, Matrix<int, -1, 2> gait_table,
                   double x_drag, double dt);
   void solve_mpc();

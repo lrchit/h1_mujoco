@@ -54,8 +54,10 @@ include_directories(
     estimate
     simulate
     utils
-    controllers/iLQR
     controllers/mpc
+    test
+    test/demo
+    test/motion_planning
     ${Python3_INCLUDE_DIRS} 
     ${Python3_NumPy_INCLUDE_DIRS}
 )
@@ -82,14 +84,18 @@ if(NOT TARGET lodepng)
 endif()
 
 aux_source_directory(simulate SIM_SRC)
-aux_source_directory(controllers/iLQR ILQR_SRC)
 aux_source_directory(controllers/mpc MPC_SRC)
+aux_source_directory(test TEST_SRC)
+aux_source_directory(test/demo DEMO_SRC)
+aux_source_directory(test/motion_planning MOTION_PLANNING_SRC)
 aux_source_directory(estimate ESTM_SRC)
 aux_source_directory(utils UTILS_SRC)
 
 add_executable(main main.cpp
-                    ${ILQR_SRC}
                     ${MPC_SRC}
+                    ${TEST_SRC}
+                    ${DEMO_SRC}
+                    ${MOTION_PLANNING_SRC}
                     ${SIM_SRC}
                     ${ESTM_SRC}
                     ${UTILS_SRC}

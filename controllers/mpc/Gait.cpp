@@ -1,16 +1,17 @@
+
 #include "Gait.h"
 
 // Offset - Duration Gait
 OffsetDurationGait::OffsetDurationGait(int nSegment,
-                                       Eigen::Vector<int, 4> offsets,
-                                       Eigen::Vector<int, 4> durations,
+                                       Eigen::Vector<int, 2> offsets,
+                                       Eigen::Vector<int, 2> durations,
                                        const std::string &name)
     : _offsets(offsets.array()), _durations(durations.array()),
       _nIterations(nSegment) {
 
   _name = name;
   // allocate memory for MPC gait table
-  _mpc_table = new int[nSegment * 4];
+  _mpc_table = new int[nSegment * 2];
 
   _offsetsDouble = offsets.cast<double>() / (double)nSegment;
   _durationsDouble = durations.cast<double>() / (double)nSegment;
@@ -20,12 +21,12 @@ OffsetDurationGait::OffsetDurationGait(int nSegment,
 }
 
 MixedFrequncyGait::MixedFrequncyGait(int nSegment,
-                                     Eigen::Vector<int, 4> periods,
+                                     Eigen::Vector<int, 2> periods,
                                      double duty_cycle,
                                      const std::string &name) {
   _name = name;
   _duty_cycle = duty_cycle;
-  _mpc_table = new int[nSegment * 4];
+  _mpc_table = new int[nSegment * 2];
   _periods = periods;
   _nIterations = nSegment;
   _iteration = 0;
@@ -36,10 +37,10 @@ OffsetDurationGait::~OffsetDurationGait() { delete[] _mpc_table; }
 
 MixedFrequncyGait::~MixedFrequncyGait() { delete[] _mpc_table; }
 
-Eigen::Vector<double, 4> OffsetDurationGait::getContactState() {
-  Array4d progress = _phase - _offsetsDouble;
+Eigen::Vector<double, 2> OffsetDurationGait::getContactState() {
+  Array2d progress = _phase - _offsetsDouble;
 
-  for (int i = 0; i < 4; i++) {
+  for (int i = 0; i < 2; i++) {
     if (progress[i] < 0)
       progress[i] += 1.;
     if (progress[i] > _durationsDouble[i]) {
@@ -54,10 +55,10 @@ Eigen::Vector<double, 4> OffsetDurationGait::getContactState() {
   return progress.matrix();
 }
 
-Eigen::Vector<double, 4> MixedFrequncyGait::getContactState() {
-  Array4d progress = _phase;
+Eigen::Vector<double, 2> MixedFrequncyGait::getContactState() {
+  Array2d progress = _phase;
 
-  for (int i = 0; i < 4; i++) {
+  for (int i = 0; i < 2; i++) {
     if (progress[i] < 0)
       progress[i] += 1.;
     if (progress[i] > _duty_cycle) {
@@ -72,16 +73,16 @@ Eigen::Vector<double, 4> MixedFrequncyGait::getContactState() {
   return progress.matrix();
 }
 
-Eigen::Vector<double, 4> OffsetDurationGait::getSwingState() {
-  Array4d swing_offset = _offsetsDouble + _durationsDouble;
-  for (int i = 0; i < 4; i++)
+Eigen::Vector<double, 2> OffsetDurationGait::getSwingState() {
+  Array2d swing_offset = _offsetsDouble + _durationsDouble;
+  for (int i = 0; i < 2; i++)
     if (swing_offset[i] > 1)
       swing_offset[i] -= 1.;
-  Array4d swing_duration = 1. - _durationsDouble;
+  Array2d swing_duration = 1. - _durationsDouble;
 
-  Array4d progress = _phase - swing_offset;
+  Array2d progress = _phase - swing_offset;
 
-  for (int i = 0; i < 4; i++) {
+  for (int i = 0; i < 2; i++) {
     if (progress[i] < 0)
       progress[i] += 1.f;
     if (progress[i] > swing_duration[i]) {
@@ -96,11 +97,11 @@ Eigen::Vector<double, 4> OffsetDurationGait::getSwingState() {
   return progress.matrix();
 }
 
-Eigen::Vector<double, 4> MixedFrequncyGait::getSwingState() {
+Eigen::Vector<double, 2> MixedFrequncyGait::getSwingState() {
 
   double swing_duration = 1.f - _duty_cycle;
-  Array4d progress = _phase - _duty_cycle;
-  for (int i = 0; i < 4; i++) {
+  Array2d progress = _phase - _duty_cycle;
+  for (int i = 0; i < 2; i++) {
     if (progress[i] < 0) {
       progress[i] = 0;
     } else {
@@ -118,16 +119,16 @@ int *OffsetDurationGait::getMpcTable() {
   // printf("MPC table:\n");
   for (int i = 0; i < _nIterations; i++) {
     int iter = (i + _iteration + 1) % _nIterations;
-    Array4i progress = iter - _offsets;
-    for (int j = 0; j < 4; j++) {
+    Array2i progress = iter - _offsets;
+    for (int j = 0; j < 2; j++) {
       if (progress[j] < 0)
         progress[j] += _nIterations;
       if (progress[j] < _durations[j])
-        _mpc_table[i * 4 + j] = 1;
+        _mpc_table[i * 2 + j] = 1;
       else
-        _mpc_table[i * 4 + j] = 0;
+        _mpc_table[i * 2 + j] = 0;
 
-      // printf("%d ", _mpc_table[i*4 + j]);
+      // printf("%d ", _mpc_table[i*2 + j]);
     }
     // printf("\n");
   }
@@ -138,19 +139,19 @@ int *OffsetDurationGait::getMpcTable() {
 int *MixedFrequncyGait::getMpcTable() {
   // printf("MPC table (%d):\n", _iteration);
   for (int i = 0; i < _nIterations; i++) {
-    for (int j = 0; j < 4; j++) {
+    for (int j = 0; j < 2; j++) {
       int progress = (i + _iteration + 1) % _periods[j]; // progress
       if (progress < (_periods[j] * _duty_cycle)) {
-        _mpc_table[i * 4 + j] = 1;
+        _mpc_table[i * 2 + j] = 1;
       } else {
-        _mpc_table[i * 4 + j] = 0;
+        _mpc_table[i * 2 + j] = 0;
       }
-      // printf("%d %d (%d %d) | ", _mpc_table[i*4 + j], progress, _periods[j],
+      // printf("%d %d (%d %d) | ", _mpc_table[i*2 + j], progress, _periods[j],
       // (int)(_periods[j] * _duty_cycle));
     }
 
-    // printf("%d %d %d %d (%.3f %.3f %.3f %.3f)\n", _mpc_table[i*4],
-    // _mpc_table[i*4 + 1], _mpc_table[i*4 + ]) printf("\n");
+    // printf("%d %d %d %d (%.3f %.3f %.3f %.3f)\n", _mpc_table[i*2],
+    // _mpc_table[i*2 + 1], _mpc_table[i*2 + ]) printf("\n");
   }
   return _mpc_table;
 }
@@ -165,7 +166,7 @@ void OffsetDurationGait::setIterations(int iterationsPerMPC,
 void MixedFrequncyGait::setIterations(int iterationsBetweenMPC,
                                       int currentIteration) {
   _iteration = (currentIteration / iterationsBetweenMPC); // % _nIterations;
-  for (int i = 0; i < 4; i++) {
+  for (int i = 0; i < 2; i++) {
     int progress_mult = currentIteration % (iterationsBetweenMPC * _periods[i]);
     _phase[i] =
         ((double)progress_mult) / ((double)iterationsBetweenMPC * _periods[i]);
