@@ -160,7 +160,7 @@ void H1Estm::cheater_compute_state(H1State &state, mjData *d) {
 
   // Vector<double, 5> qpos, qvel;
   // Vector<double, 6> x, dx;
-  // x = state.foot_pos_base.col(0);
+  // x << 0.039468, 0.20286, -0.801049, 0, 0, 0;
   // dx = state.foot_vel_base.col(0);
   // limb_kin[0].inverse_kin_frame(qpos, qvel, x, dx, frame_name[0],
   //                               Vector<double, 5>(0, 0, -0.4, 0.8, -0.4));

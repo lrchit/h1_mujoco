@@ -547,13 +547,13 @@ void PhysicsThread(mj::Simulate *sim, const char *filename) {
       // 设置初始状态（可选）
       // Initialize joint positions
       double qpos_init[] = {// pelvis pos
-                            0, 0, 0.98,
+                            0, 0, 0.8 + 0.005,
                             // pelvis quat
                             1, 0, 0, 0,
                             // left leg
-                            0, 0, -0.4, 0.8, -0.4,
+                            0, 0, -0.800729, 1.60146, -0.800729,
                             // right leg
-                            0, 0, -0.4, 0.8, -0.4,
+                            0, 0, -0.800729, 1.60146, -0.800729,
                             // torso joint
                             0,
                             // left arm
@@ -574,8 +574,8 @@ void PhysicsThread(mj::Simulate *sim, const char *filename) {
     }
   }
   // Initialize joint velocities
-  // mj_forward(m, d);
-  // std::this_thread::sleep_for(std::chrono::milliseconds(5000000000));
+  mj_forward(m, d);
+  std::this_thread::sleep_for(std::chrono::milliseconds(1000));
 
   PhysicsLoop(*sim);
 

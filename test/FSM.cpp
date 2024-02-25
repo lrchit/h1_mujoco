@@ -313,7 +313,7 @@ void H1FSM::compute_joint_torques() {
         limb_kin[i].get_limb_jacobian(state_cur.leg_qpos.col(i), frame_name[i]);
 
     Vector<double, 6> grf_world = state_cur.grf_ref.segment(6 * i, 6);
-    std::cout << "grf_world = \n" << grf_world.transpose() << std::endl;
+    // std::cout << "grf_world = \n" << grf_world.transpose() << std::endl;
     Vector<double, 6> grf_base;
     grf_base.head<3>() = state_cur.rot_mat * grf_world.head<3>();
     grf_base.tail<3>() = state_cur.rot_mat * grf_world.tail<3>();

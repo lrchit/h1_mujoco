@@ -4,11 +4,11 @@ omniMode: false
 use_wbc: false
 
 
-horizon: 10
+horizon: 15
 constraint_num: 16
-iteration_between_mpc: 13
+iteration_between_mpc: 20
 
-q1: 0.25
+q1: 1
 q2: 0.25
 q3: 20
 q4: 2
@@ -42,8 +42,8 @@ kd_cartesian_r: 5
 kd_cartesian_p: 5
 kd_cartesian_y: 1
 
-body_height_stand: 0.98
-body_height_motion: 0.98
+body_height_stand: 0.8
+body_height_motion: 0.8
 
 swing_height_walking: 0.1
 

@@ -148,8 +148,7 @@ void MotionPlanning::config_foot_hold(const H1State &state_cur,
                                       double swing_height) {
   // 配置落足点
   Matrix<double, 3, 2> foot_location_offset;
-  foot_location_offset << 0.039468, 0.039468, 0.20286, -0.20286, -0.981049,
-      -0.981049;
+  foot_location_offset << 0.039468, 0.039468, 0.20286, -0.20286, 0, 0;
 
   // 计算控制量
   for (int i = 0; i < 2; ++i) {

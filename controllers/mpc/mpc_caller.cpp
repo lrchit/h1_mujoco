@@ -69,6 +69,7 @@ H1Mpc::H1Mpc(int _horizon) {
     linear_constraints.insert(1 + 5 + 8 * i, 1 + 3 + 6 * i) = 1;
     linear_constraints.insert(2 + 5 + 8 * i, 2 + 3 + 6 * i) = 1;
   }
+  // std::cout << "linear_constraints = \n" << linear_constraints << std::endl;
 
   Hessian.resize(12 * horizon, 12 * horizon);
 
@@ -85,8 +86,8 @@ H1Mpc::H1Mpc(int _horizon) {
   lb.setZero(constraint_num * horizon);
   ub.setZero(constraint_num * horizon);
 
-  inertia << 6.095, 0, 0.565, 0, 5.402, -0.011, 0.565, -0.011, 1.262;
-  mass = 10000;
+  inertia << 6.09519, 0, 0.565, 0, 5.402, -0.011, 0.565, -0.011, 1.26229;
+  mass = 51.601;
 }
 
 // 更新mpc参数
@@ -98,11 +99,10 @@ void H1Mpc::update_mpc(Matrix<double, 3, 2> foot_pos, VectorXd state_des,
   // std::cout << "************* mpc_control *************" << std::endl;
   // std::cout << "state_cur\n" << state_cur.transpose() << std::endl;
   // std::cout << "state_des\n"
-  //           << state_des.block(0, 0, 12, 1).transpose() << std::endl;
-  // std::cout << "foot_pos\n"
-  //           << foot_pos.block(0, 0, 3, 1).transpose() << std::endl;
-  // std::cout << "foot_pos\n"
-  //           << foot_pos.block(0, 1, 3, 1).transpose() << std::endl;
+  //           << state_des.block(13, 0, 13, 1).transpose() << std::endl;
+  // std::cout << "foot_pos\n" << foot_pos.col(0).transpose() << std::endl;
+  // std::cout << "foot_pos\n" << foot_pos.col(1).transpose() << std::endl;
+  // std::cout << "x_drag\n" << x_drag << std::endl;
 
   // 计算连续形式的A,B
   Matrix3d trans_mat;
@@ -146,9 +146,9 @@ void H1Mpc::update_mpc(Matrix<double, 3, 2> foot_pos, VectorXd state_des,
   // 摩擦力上下界
   double fz_min = 0;
   double fz_max = 1000;
-  double tau_x_max = 500;
-  double tau_y_max = 500;
-  double tau_z_max = 500;
+  double tau_x_max = 0;
+  double tau_y_max = 200;
+  double tau_z_max = 200;
   VectorXd lb_one_horizon(constraint_num);
   VectorXd ub_one_horizon(constraint_num);
   for (int i = 0; i < horizon; ++i) {
