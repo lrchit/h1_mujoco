@@ -59,6 +59,17 @@ void FBDynModel::_updateMBkinmatics() {
     // std::cout << _vGC[i].transpose() << std::endl;
   }
 
+  // std::vector<std::string> frame_name;
+  // frame_name.push_back("left_foot_center");
+  // frame_name.push_back("right_foot_center");
+  // frame_name.push_back("torso_link");
+  // frame_name.push_back("left_elbow_link");
+  // frame_name.push_back("right_elbow_link");
+  // for (int i = 0; i < 5; ++i) {
+  //   pinocchio::FrameIndex FRAME_ID = model.getFrameId(frame_name[i]);
+  //   std::cout << FRAME_ID << std::endl;
+  // }
+
   // std::cout << _Jc.size() << std::endl;
 
   // std::cout << "end" << std::endl;

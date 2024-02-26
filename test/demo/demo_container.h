@@ -1,7 +1,6 @@
 
 #pragma once
 
-// #include "WbcCtrl.hpp"
 #include "cppTypes.h"
 #include "kinematics.h"
 #include "mpc_caller.h"

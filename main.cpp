@@ -451,10 +451,8 @@ void FSMLoop(mj::Simulate &sim) {
         {
           FSM.main_program();
 
-          for (int i = 0; i < 2; ++i) {
-            for (int j = 0; j < 5; ++j) {
-              d->ctrl[i * 5 + j] = FSM.get_joint_torques()(i * 5 + j);
-            }
+          for (int i = 0; i < 19; ++i) {
+            d->ctrl[i] = FSM.get_joint_torques()(i);
           }
         }
 
@@ -492,6 +490,34 @@ void MpcLoop(mj::Simulate &sim) {
             //                                                           t_start)
             //         .count();
             // std::cout << "mpc_time: " << time_record / 1000 << "\n";
+          } else
+            std::this_thread::sleep_for(std::chrono::milliseconds(1));
+        }
+      }
+    }
+  }
+}
+
+void WbcLoop(mj::Simulate &sim) {
+
+  while (!sim.exitrequest.load()) {
+    if (!sim.uiloadrequest.load()) {
+      if (d != nullptr) {
+
+        // std::chrono::time_point<std::chrono::system_clock> t_start =
+        //     std::chrono::system_clock::now();
+
+        {
+          if (FSM.wbc_update_needed) {
+            FSM.compute_wbc();
+
+            // std::chrono::time_point<std::chrono::system_clock> t_end =
+            //     std::chrono::system_clock::now();
+            // double time_record =
+            //     std::chrono::duration_cast<std::chrono::milliseconds>(t_end -
+            //                                                           t_start)
+            //         .count();
+            // std::cout << "wbc_time: " << time_record / 1000 << "\n";
           } else
             std::this_thread::sleep_for(std::chrono::milliseconds(1));
         }
@@ -575,7 +601,10 @@ void PhysicsThread(mj::Simulate *sim, const char *filename) {
   }
   // Initialize joint velocities
   mj_forward(m, d);
-  std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+  std::this_thread::sleep_for(
+      std::chrono::milliseconds(1000)); // don't change this
+  std::cout << " ************************ controller ************************ "
+            << std::endl;
 
   PhysicsLoop(*sim);
 
@@ -590,10 +619,15 @@ void PhysicsThread(mj::Simulate *sim, const char *filename) {
 
 void FSMThread(mj::Simulate *sim) { FSMLoop(*sim); }
 
-//-------------------------------------- FSM_thread
+//-------------------------------------- mpc_thread
 //--------------------------------------------
 
 void MpcThread(mj::Simulate *sim) { MpcLoop(*sim); }
+
+//-------------------------------------- wbc_thread
+//--------------------------------------------
+
+void WbcThread(mj::Simulate *sim) { WbcLoop(*sim); }
 
 //-------------------------------------- estimate_thread
 //--------------------------------------------
@@ -660,6 +694,8 @@ int main(int argc, char **argv) {
   std::thread FSMthreadhandle(&FSMThread, sim.get());
   // start mpc thread
   std::thread mpcthreadhandle(&MpcThread, sim.get());
+  // start wbc thread
+  std::thread wbcthreadhandle(&WbcThread, sim.get());
   // start etsimate thread
   std::thread estimatethreadhandle(&EstimateThread, sim.get());
 
@@ -668,6 +704,7 @@ int main(int argc, char **argv) {
   physicsthreadhandle.join();
   FSMthreadhandle.join();
   mpcthreadhandle.join();
+  wbcthreadhandle.join();
   estimatethreadhandle.join();
 
   return 0;

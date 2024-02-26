@@ -7,6 +7,7 @@
 #include <eigen3/unsupported/Eigen/MatrixFunctions>
 #include <yaml-cpp/yaml.h>
 
+#include "dynamics.hpp"
 #include "orientation_tools.h"
 #include "state.h"
 
@@ -17,10 +18,12 @@ public:
   H1Mpc(int _horizon);
   ~H1Mpc(){};
 
-  void update_mpc(Matrix<double, 3, 2> foot_pos, VectorXd state_des,
-                  Vector<double, 13> state_cur, Matrix<int, -1, 2> gait_table,
+  void update_mpc(Matrix<double, 3, 2> foot_pos, VectorXd &state_des,
+                  Vector<double, 13> &state_cur, Matrix<int, -1, 2> gait_table,
                   double x_drag, double dt);
   void solve_mpc();
+
+  void update_inertia(H1State &state);
 
   Vector<double, 12> get_solution();
   VectorXd get_solution_trajectory();
@@ -61,4 +64,6 @@ private:
   Matrix3d inertia;
 
   Vector<double, 12> solution;
+
+  FBDynModel floating_base_dyn;
 };

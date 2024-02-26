@@ -60,6 +60,6 @@ struct H1State {
 
   Eigen::Matrix<double, 4, 1> contact_phase;
 
-  Eigen::Matrix<double, 12, 1> grf_ref;
+  Eigen::Matrix<double, 24, 1> grf_ref;
   Eigen::Matrix<double, 19, 1> joint_torque;
 };

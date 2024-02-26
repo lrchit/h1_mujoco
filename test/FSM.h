@@ -1,14 +1,16 @@
 
 #pragma once
 
+#include <yaml-cpp/yaml.h>
+
 #include "Gait.h"
+#include "WbcCtrl.hpp"
 #include "demo_container.h"
 #include "estimate.h"
 #include "kinematics.h"
 #include "motion_planning.h"
 #include "orientation_tools.h"
 #include "state.h"
-#include <yaml-cpp/yaml.h>
 
 class H1FSM {
 public:
@@ -36,14 +38,15 @@ private:
 
   // 模块：状态估计，mpc，wbc，demo
   H1Estm *estimater;
-  // H1Wbc *wbc_controller;
+  H1Wbc *wbc_controller;
   MotionPlanning *motion_planning;
   H1Mpc *mpc_solver;
 
   std::vector<kinematics> limb_kin;
-  // WbcData wbc_data;
+  WbcData wbc_data;
 
   Matrix<double, 6, 2> foot_forces_kin;
+  Matrix<double, 5, 2> leg_joint_torque_kin;
 
   int counter;
 

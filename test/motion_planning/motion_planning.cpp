@@ -6,7 +6,8 @@
 /**
  * @brief 初始化
  */
-MotionPlanning::MotionPlanning() {
+MotionPlanning::MotionPlanning(std::vector<kinematics> _limb_kin) {
+  limb_kin = _limb_kin;
 
   YAML::Node config = YAML::LoadFile("../controllers/mpc_config.yaml");
 
@@ -14,15 +15,26 @@ MotionPlanning::MotionPlanning() {
   kpCartesian(0, 0) = config["kp_cartesian_x"].as<double>();
   kpCartesian(1, 1) = config["kp_cartesian_y"].as<double>();
   kpCartesian(2, 2) = config["kp_cartesian_z"].as<double>();
-  kpCartesian(3, 3) = config["kp_cartesian_r"].as<double>();
-  kpCartesian(4, 4) = config["kp_cartesian_p"].as<double>();
-  kpCartesian(5, 5) = config["kp_cartesian_y"].as<double>();
+  kpCartesian(3, 3) = config["kp_cartesian_roll"].as<double>();
+  kpCartesian(4, 4) = config["kp_cartesian_pitch"].as<double>();
+  kpCartesian(5, 5) = config["kp_cartesian_yaw"].as<double>();
   kdCartesian(0, 0) = config["kd_cartesian_x"].as<double>();
   kdCartesian(1, 1) = config["kd_cartesian_y"].as<double>();
   kdCartesian(2, 2) = config["kd_cartesian_z"].as<double>();
-  kdCartesian(3, 3) = config["kd_cartesian_r"].as<double>();
-  kdCartesian(4, 4) = config["kd_cartesian_p"].as<double>();
-  kdCartesian(5, 5) = config["kd_cartesian_y"].as<double>();
+  kdCartesian(3, 3) = config["kd_cartesian_roll"].as<double>();
+  kdCartesian(4, 4) = config["kd_cartesian_pitch"].as<double>();
+  kdCartesian(5, 5) = config["kd_cartesian_yaw"].as<double>();
+
+  kpJoint(0, 0) = config["kp_joint_1"].as<double>();
+  kpJoint(1, 1) = config["kp_joint_2"].as<double>();
+  kpJoint(2, 2) = config["kp_joint_3"].as<double>();
+  kpJoint(3, 3) = config["kp_joint_4"].as<double>();
+  kpJoint(4, 4) = config["kp_joint_5"].as<double>();
+  kdJoint(0, 0) = config["kd_joint_1"].as<double>();
+  kdJoint(1, 1) = config["kd_joint_2"].as<double>();
+  kdJoint(2, 2) = config["kd_joint_3"].as<double>();
+  kdJoint(3, 3) = config["kd_joint_4"].as<double>();
+  kdJoint(4, 4) = config["kd_joint_5"].as<double>();
 
   dt = 0.001;
   dtmpc = dt * config["iteration_between_mpc"].as<int>();
@@ -45,17 +57,17 @@ void MotionPlanning::rpy_safety_check(Vector3d &angle_des, Vector3d angle_act) {
   }
 }
 
-void MotionPlanning::generate_swing_ctrl(bool use_wbc, Gait *gait,
-                                         const H1State &state_cur,
-                                         H1State &state_des,
-                                         Matrix<double, 6, 2> &foot_forces_kin,
-                                         double swing_height) {
+void MotionPlanning::generate_swing_ctrl(
+    bool use_wbc, Gait *gait, const H1State &state_cur, H1State &state_des,
+    Matrix<double, 6, 2> &foot_forces_kin,
+    Matrix<double, 5, 2> &leg_joint_torque_kin, double swing_height) {
 
   // 摆动相位
   for (int i = 0; i < 2; ++i) {
     if (gait->getSwingState()(i) >= 0 && gait->getSwingState()(i) <= 1)
       swing_state(i) = gait->getSwingState()(i);
   }
+  // std::cout << "swing_state\n" << swing_state.transpose() << std::endl;
 
   // some first time initialization
   if (firstRun) {
@@ -68,57 +80,54 @@ void MotionPlanning::generate_swing_ctrl(bool use_wbc, Gait *gait,
 
   // 落足点配置
   config_foot_hold(state_cur, state_des, gait, swing_height);
+  std::vector<std::string> frame_name;
+  frame_name.push_back("left_foot_center");
+  frame_name.push_back("right_foot_center");
 
-  // 摆动腿
   for (int i = 0; i < 2; ++i) {
-    // 摆动腿，在Cartesian下规划
-    if (swing_state(i) > 0) {
+    // 获取轨迹上的足点，世界系
+    state_des.foot_pos_world.col(i) =
+        footSwingTrajectories[i].get_swing_pos(swing_state(i));
+    state_des.foot_vel_world.col(i) =
+        footSwingTrajectories[i].get_swing_vel(swing_state(i));
+    // 获取轨迹上的足点，机体系[todo]
+    state_des.foot_pos_base.block(0, i, 3, 1) =
+        state_cur.rot_mat *
+        (state_des.foot_pos_world.block(0, i, 3, 1) - state_cur.pos);
+    Matrix3d rot_world_to_foot =
+        ori::rpyToRotMat(state_des.foot_pos_world.block(3, i, 3, 1));
+    Matrix3d rot_base_to_foot =
+        state_cur.rot_mat.transpose() * rot_world_to_foot;
+    Quat quat_base_to_foot = ori::rotationMatrixToQuaternion(rot_base_to_foot);
+    state_des.foot_pos_base.block(3, i, 3, 1) =
+        ori::quatToRPY(quat_base_to_foot);
 
-      // 获取轨迹上的足点，世界系
-      state_des.foot_pos_world.col(i) =
-          footSwingTrajectories[i].get_swing_pos(swing_state(i));
-      state_des.foot_vel_world.col(i) =
-          footSwingTrajectories[i].get_swing_vel(swing_state(i));
-      // 机体系[todo]
-      state_des.foot_pos_base.block(0, i, 3, 1) =
-          state_cur.rot_mat *
-          (state_des.foot_pos_world.block(0, i, 3, 1) - state_cur.pos);
-      Matrix3d rot_world_to_foot =
-          ori::rpyToRotMat(state_des.foot_pos_world.block(3, i, 3, 1));
-      Matrix3d rot_base_to_foot =
-          state_cur.rot_mat.transpose() * rot_world_to_foot;
-      Quat quat_base_to_foot =
-          ori::rotationMatrixToQuaternion(rot_base_to_foot);
-      state_des.foot_pos_base.block(3, i, 3, 1) =
-          ori::quatToRPY(quat_base_to_foot);
+    state_des.foot_vel_base.block(0, i, 3, 1) =
+        state_cur.rot_mat *
+        (state_des.foot_vel_world.block(0, i, 3, 1) - state_cur.lin_vel);
+    state_des.foot_vel_base.block(3, i, 3, 1) =
+        state_cur.rot_mat * (state_des.foot_vel_world.block(0, i, 3, 1) +
+                             state_cur.euler_angle_vel);
 
-      state_des.foot_vel_base.block(0, i, 3, 1) =
-          state_cur.rot_mat *
-          (state_des.foot_vel_world.block(0, i, 3, 1) - state_cur.lin_vel);
-      state_des.foot_vel_base.block(3, i, 3, 1) =
-          state_cur.rot_mat * (state_des.foot_vel_world.block(0, i, 3, 1) +
-                               state_cur.euler_angle_vel);
-    } else {
-      // 支撑腿
-      // 获取轨迹上的足点，世界系
-      state_des.foot_pos_world.col(i) = state_cur.foot_pos_world.col(i);
-      state_des.foot_vel_world.col(i) = state_cur.foot_vel_world.col(i);
-      // 机体系
-      state_des.foot_pos_base.col(i) = state_cur.foot_pos_base.col(i);
-      state_des.foot_vel_base.col(i) = state_cur.foot_vel_base.col(i);
-      // state_des.foot_pos_base.block(0, i, 3, 1) =
-      //     state_cur.rot_mat *
-      //     (state_des.foot_pos_world.block(0, i, 3, 1) - state_cur.pos);
-      // state_des.foot_vel_base.block(0, i, 3, 1) =
-      //     state_cur.rot_mat *
-      //     (state_des.foot_vel_world.block(0, i, 3, 1) - state_cur.lin_vel);
-    }
+    // // 获取轨迹上的joint
+    // Vector<double, 5> qpos, qvel;
+    // Vector<double, 6> x, dx;
+    // x = state_des.foot_pos_base.col(i);
+    // dx = state_des.foot_vel_base.col(i);
+    // limb_kin[i].inverse_kin_frame(
+    //     qpos, qvel, x, dx, frame_name[i],
+    //     Vector<double, 5>(0, 0, -0.800729, 1.60146, -0.800729));
+
+    // state_des.leg_qpos.col(i) = qpos;
+    // state_des.leg_qvel.col(i) = qvel;
   }
 
   // 计算关节力矩
   if (!use_wbc) {
     Matrix<double, 6, 2> foot_pos_error;
     Matrix<double, 6, 2> foot_vel_error;
+    Matrix<double, 5, 2> joint_pos_error;
+    Matrix<double, 5, 2> joint_vel_error;
     for (int i = 0; i < 2; ++i) {
       // 摆动腿，在Cartesian下规划
       if (swing_state(i) > 0) {
@@ -127,18 +136,40 @@ void MotionPlanning::generate_swing_ctrl(bool use_wbc, Gait *gait,
             state_des.foot_pos_base.col(i) - state_cur.foot_pos_base.col(i);
         foot_vel_error.col(i) =
             state_des.foot_vel_base.col(i) - state_cur.foot_vel_base.col(i);
+
+        joint_pos_error.col(i) =
+            state_des.leg_qpos.col(i) - state_cur.leg_qpos.col(i);
+        joint_vel_error.col(i) =
+            state_des.leg_qvel.col(i) - state_cur.leg_qvel.col(i);
       } else {
-        // 支撑腿加d
+        // 支撑腿
         foot_pos_error.col(i) =
             (state_des.foot_pos_base.col(i) - state_cur.foot_pos_base.col(i)) *
             0;
         foot_vel_error.col(i) =
             (state_des.foot_vel_base.col(i) - state_cur.foot_vel_base.col(i));
+
+        joint_pos_error.col(i) =
+            (state_des.leg_qpos.col(i) - state_cur.leg_qpos.col(i));
+        joint_vel_error.col(i) =
+            (state_des.leg_qvel.col(i) - state_cur.leg_qvel.col(i));
       }
       // pd控制
       foot_forces_kin.col(i) = kpCartesian * foot_pos_error.col(i) +
                                kdCartesian * foot_vel_error.col(i);
+      leg_joint_torque_kin.col(i) =
+          kpJoint * joint_pos_error.col(i) + kdJoint * joint_vel_error.col(i);
     }
+    // foot_forces_kin.setZero();
+    // leg_joint_torque_kin.setZero();
+    // std::cout << "state_des.foot_pos_base\n"
+    //           << state_des.foot_pos_base << std::endl;
+    // std::cout << "state_des.foot_vel_base\n"
+    //           << state_des.foot_vel_base << std::endl;
+    // std::cout << "foot_pos_error\n" << foot_pos_error << std::endl;
+    // std::cout << "foot_vel_error\n" << foot_vel_error << std::endl;
+    // std::cout << "joint_pos_error\n" << joint_pos_error << std::endl;
+    // std::cout << "joint_vel_error\n" << joint_vel_error << std::endl;
   }
 }
 
@@ -162,8 +193,11 @@ void MotionPlanning::config_foot_hold(const H1State &state_cur,
         footSwingTrajectories[i].set_swing_height(swing_height);
 
         firstSwing[i] = false;
-        footSwingTrajectories[i].set_lift_point(
-            state_cur.foot_pos_world.col(i));
+        Vector<double, 6> foot_pos_world;
+        foot_pos_world.segment(0, 3) =
+            state_cur.foot_pos_world.block(0, i, 3, 1);
+        foot_pos_world.segment(3, 3) << 0, 0, 0;
+        footSwingTrajectories[i].set_lift_point(foot_pos_world);
 
         swingTimeRemaining[i] = gait->getCurrentSwingTime(dtmpc, i);
 

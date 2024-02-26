@@ -2,7 +2,6 @@
 #pragma once
 
 #include "Gait.h"
-// #include "WbcCtrl.hpp"
 #include "foot_swing_traj.h"
 #include "kinematics.h"
 #include "orientation_tools.h"
@@ -13,12 +12,13 @@ using namespace Eigen;
 
 class MotionPlanning {
 public:
-  MotionPlanning();
+  MotionPlanning(std::vector<kinematics> _limb_kin);
   ~MotionPlanning(){};
 
   void generate_swing_ctrl(bool use_wbc, Gait *gait, const H1State &state_cur,
                            H1State &state_des,
                            Matrix<double, 6, 2> &foot_forces_kin,
+                           Matrix<double, 5, 2> &leg_joint_torque_kin,
                            double swing_height);
 
   void update_command(Vector3d lin_vel_cmd, Vector3d angle_vel_cmd,
@@ -47,4 +47,6 @@ private:
   Matrix<double, 2, 1> swing_state;
   Matrix<double, 6, 2> foot_hold;
   foot_swing_traj footSwingTrajectories[2];
+
+  std::vector<kinematics> limb_kin;
 };

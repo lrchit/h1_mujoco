@@ -55,6 +55,8 @@ include_directories(
     simulate
     utils
     controllers/mpc
+    controllers/wbc 
+    controllers/wbc/TaskContact 
     test
     test/demo
     test/motion_planning
@@ -85,6 +87,8 @@ endif()
 
 aux_source_directory(simulate SIM_SRC)
 aux_source_directory(controllers/mpc MPC_SRC)
+aux_source_directory(controllers/wbc WBC_SRC)
+aux_source_directory(controllers/wbc/TaskContact WBC_TASK_CONTACT_SRC)
 aux_source_directory(test TEST_SRC)
 aux_source_directory(test/demo DEMO_SRC)
 aux_source_directory(test/motion_planning MOTION_PLANNING_SRC)
@@ -93,6 +97,8 @@ aux_source_directory(utils UTILS_SRC)
 
 add_executable(main main.cpp
                     ${MPC_SRC}
+                    ${WBC_SRC}
+                    ${WBC_TASK_CONTACT_SRC}
                     ${TEST_SRC}
                     ${DEMO_SRC}
                     ${MOTION_PLANNING_SRC}

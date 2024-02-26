@@ -45,8 +45,8 @@ H1FSM::H1FSM() {
 
   estimater = new H1Estm(limb_kin);
   demo = new H1Demo(limb_kin);
-  // wbc_controller = new H1Wbc();
-  motion_planning = new MotionPlanning();
+  wbc_controller = new H1Wbc();
+  motion_planning = new MotionPlanning(limb_kin);
   mpc_solver = new H1Mpc(horizon);
 }
 
@@ -57,7 +57,8 @@ void H1FSM::main_program() {
 
   counter++;
 
-  if (counter >= 300) {
+  if (counter >= 500) // don't change this
+  {
     // std::cout << "***************** force_mode *****************" <<
     // std::endl;
 
@@ -69,11 +70,11 @@ void H1FSM::main_program() {
 
     // 3种模式，站立，踏步，行走
     // 先切力控站立再运动
-    if (counter < 30000000) {
+    if (counter < 2000000) {
       // std::cout << "***************** standing *****************\n"
       //           << std::endl;
       mode = STANDING;
-    } else if (counter < 5500) {
+    } else if (counter < 550000) {
       // std::cout << "***************** stepping *****************\n"
       //           << std::endl;
       mode = STEPPING;
@@ -118,7 +119,7 @@ void H1FSM::run(int mode) {
   if (mode == STANDING) {
     gait = standing;
     // 支撑相位要发给state_estimator
-    state_cur.contact_phase << 0.5, 0.5;
+    state_cur.contact_phase << 0.5, 0.5, 0, 0;
 
     demo->standing_demo(state_cur, lin_vel_cmd, angle_vel_cmd, traj_integrate,
                         body_height_stand);
@@ -129,6 +130,8 @@ void H1FSM::run(int mode) {
 
     for (int i = 0; i < 2; ++i)
       state_cur.contact_phase(i) = gait->getContactState()(i);
+    for (int i = 2; i < 4; ++i)
+      state_cur.contact_phase(i) = 0;
 
     demo->stepping_demo(lin_vel_cmd, angle_vel_cmd, traj_integrate,
                         swing_height, body_height_motion);
@@ -137,6 +140,8 @@ void H1FSM::run(int mode) {
 
     for (int i = 0; i < 2; ++i)
       state_cur.contact_phase(i) = gait->getContactState()(i);
+    for (int i = 2; i < 4; ++i)
+      state_cur.contact_phase(i) = 0;
 
     demo->walking_demo(lin_vel_cmd, angle_vel_cmd, traj_integrate, swing_height,
                        body_height_motion);
@@ -159,7 +164,8 @@ void H1FSM::run(int mode) {
 
   // 生成摆动腿控制
   motion_planning->generate_swing_ctrl(use_wbc, gait, state_cur, state_des,
-                                       foot_forces_kin, swing_height);
+                                       foot_forces_kin, leg_joint_torque_kin,
+                                       swing_height);
 
   // 判断到达mpc更新周期
   if ((iterationCounter % iteration_between_mpc) == 0) {
@@ -216,6 +222,7 @@ void H1FSM::updateMpcData() {
         state_cur.foot_pos_world.block(0, i, 3, 1) - state_cur.pos;
 
   // --- update mpc solver ---
+  // mpc_solver->update_inertia(state_cur);
   mpc_solver->update_mpc(r_foot_to_com, state_des_vec, state_cur_vec,
                          gait_table, x_drag, dtmpc);
 
@@ -242,69 +249,76 @@ void H1FSM::compute_mpc() {
   }
 }
 
-// // 更新wbc需要的参数
-// void H1FSM::updateWbcData() {
+// 更新wbc需要的参数
+void H1FSM::updateWbcData() {
+  wbc_data.contact_state.resize(4);
+  wbc_data.pEnd_des.resize(4);
+  wbc_data.vEnd_des.resize(4);
+  wbc_data.aEnd_des.resize(4);
+  wbc_data.Fr_des.resize(4);
 
-//   wbc_data.contact_state.resize(4);
-//   wbc_data.pFoot_des.resize(4);
-//   wbc_data.vFoot_des.resize(4);
-//   wbc_data.aFoot_des.resize(4);
-//   wbc_data.Fr_des.resize(4);
+  // update for wbc
+  wbc_data.state.bodyOrientation = ori::rpyToQuat(state_cur.euler_angle);
+  wbc_data.state.bodyPosition = state_cur.pos;
 
-//   // update for wbc
-//   wbc_data.state.bodyOrientation = ori::rpyToQuat(state_cur.euler_angle);
-//   wbc_data.state.bodyPosition = state_cur.pos;
+  Matrix3d RotMat = state_cur.rot_mat;
 
-//   Matrix3d RotMat = state_cur.rot_mat;
+  wbc_data.state.bodyVelocity.segment(0, 3) =
+      RotMat * state_cur.euler_angle_vel;
+  wbc_data.state.bodyVelocity.segment(3, 3) = RotMat * state_cur.lin_vel;
 
-//   wbc_data.state.bodyVelocity.segment(0, 3) =
-//       RotMat * state_cur.euler_angle_vel;
-//   wbc_data.state.bodyVelocity.segment(3, 3) = RotMat * state_cur.lin_vel;
+  std::vector<int> transLeg = {1, 0, 2, 3}; //[todo]
+  // for (int i = 0; i < 4; ++i) {
+  //   wbc_data.state.q.segment(transLeg[i] * 3, 3) = state_cur.leg_qpos.col(i);
+  //   wbc_data.state.qd.segment(transLeg[i] * 3, 3) =
+  //   state_cur.leg_qvel.col(i);
+  // }
 
-//   std::vector<int> transLeg = {1, 0, 3, 2}; //[todo]
-//   for (int i = 0; i < 4; ++i) {
-//     wbc_data.state.q.segment(transLeg[i] * 3, 3) = state_cur.leg_qpos.col(i);
-//     wbc_data.state.qd.segment(transLeg[i] * 3, 3) =
-//     state_cur.leg_qvel.col(i);
-//   }
+  wbc_data.pBody_des = state_des.pos;
+  wbc_data.vBody_des = state_des.lin_vel;
+  wbc_data.aBody_des = state_des.lin_acc;
+  wbc_data.pBodyOri_des = ori::rpyToQuat(state_des.euler_angle);
+  wbc_data.vBodyOri_des = state_des.euler_angle_vel;
 
-//   wbc_data.pBody_des = state_des.pos;
-//   wbc_data.vBody_des = state_des.lin_vel;
-//   wbc_data.aBody_des = state_des.lin_acc;
-//   wbc_data.pBodyOri_des = ori::rpyToQuat(state_des.euler_angle);
-//   wbc_data.vBodyOri_des = state_des.euler_angle_vel;
+  for (int i = 0; i < 2; ++i) {
+    wbc_data.pEnd_des[transLeg[i]] = state_des.foot_pos_world.col(i);
 
-//   for (int i = 0; i < 4; ++i) {
-//     wbc_data.pFoot_des[transLeg[i]] = state_des.foot_pos_world.col(i);
+    wbc_data.vEnd_des[transLeg[i]] = state_des.foot_vel_world.col(i);
+    wbc_data.aEnd_des[transLeg[i]] = Vec6::Zero();
 
-//     wbc_data.vFoot_des[transLeg[i]] = state_des.foot_vel_world.col(i);
-//     wbc_data.aFoot_des[transLeg[i]] = Vec3::Zero();
+    if (state_cur.contact_phase(i) > 0 && state_cur.contact_phase(i) <= 1) {
+      wbc_data.contact_state[transLeg[i]] = 1;
+    } else
+      wbc_data.contact_state[transLeg[i]] = 0;
 
-//     if (state_cur.contact_phase(i) > 0 && state_cur.contact_phase(i) <= 1) {
-//       wbc_data.contact_state[transLeg[i]] = 1;
-//     }
+    wbc_data.Fr_des[transLeg[i]] = state_cur.grf_ref.segment(6 * i, 6);
+  }
+  for (int i = 2; i < 4; ++i) {
+    wbc_data.pEnd_des[transLeg[i]] = state_des.hand_pos_world.col(i);
 
-//     else
-//       wbc_data.contact_state[transLeg[i]] = 0;
+    wbc_data.vEnd_des[transLeg[i]] = state_des.hand_vel_world.col(i);
+    wbc_data.aEnd_des[transLeg[i]] = Vec6::Zero();
 
-//     wbc_data.Fr_des[transLeg[i]] = state_cur.grf_ref.segment(3 * i, 3);
-//   }
-// }
+    if (state_cur.contact_phase(i) > 0 && state_cur.contact_phase(i) <= 1) {
+      wbc_data.contact_state[transLeg[i]] = 1;
+    } else
+      wbc_data.contact_state[transLeg[i]] = 0;
 
-// // 求解wbc
-// void H1FSM::compute_wbc() {
+    wbc_data.Fr_des[transLeg[i]] = state_cur.grf_ref.segment(6 * i, 6);
+  }
+}
 
-//   // update
-//   updateWbcData();
-
-//   // --- solve the qp ---
-//   wbc_controller->run(wbc_data, state_cur.joint_torque);
-// }
+// 求解wbc
+void H1FSM::compute_wbc() {
+  // update
+  updateWbcData();
+  // --- solve the qp ---
+  wbc_controller->run(wbc_data, state_cur.joint_torque);
+}
 
 // 算关节力矩，前馈+pd
 void H1FSM::compute_joint_torques() {
   for (int i = 0; i < 2; ++i) {
-
     std::vector<std::string> frame_name;
     frame_name.push_back("left_foot_center");
     frame_name.push_back("right_foot_center");
@@ -319,7 +333,8 @@ void H1FSM::compute_joint_torques() {
     grf_base.tail<3>() = state_cur.rot_mat * grf_world.tail<3>();
 
     state_cur.joint_torque.segment(5 * i, 5) =
-        jacobian.transpose() * (foot_forces_kin.col(i) - grf_base);
+        jacobian.transpose() * (foot_forces_kin.col(i) - grf_base) +
+        leg_joint_torque_kin.col(i);
   }
 }
 

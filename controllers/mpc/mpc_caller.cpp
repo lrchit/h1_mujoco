@@ -86,13 +86,36 @@ H1Mpc::H1Mpc(int _horizon) {
   lb.setZero(constraint_num * horizon);
   ub.setZero(constraint_num * horizon);
 
-  inertia << 6.09519, 0, 0.565, 0, 5.402, -0.011, 0.565, -0.011, 1.26229;
+  inertia << 4.6284, -0.0793959, -0.398517, -0.0793959, 4.13297, -0.58975,
+      -0.398517, -0.58975, 1.46117;
   mass = 51.601;
 }
 
+void H1Mpc::update_inertia(H1State &state) {
+  FBModelState floating_base_state;
+  floating_base_state.bodyOrientation = ori::rpyToQuat(state.euler_angle);
+  floating_base_state.bodyPosition = state.pos;
+  Vector<double, 6> bodyVelocity;
+  bodyVelocity.head<3>() = state.lin_vel;
+  bodyVelocity.tail<3>() = state.euler_angle_vel;
+  Vector<double, 19> q, qd;
+  for (int i = 0; i < 2; ++i) {
+    q.segment(5 * i, 5) = state.leg_qpos.col(i);
+    qd.segment(5 * i, 5) = state.leg_qvel.col(i);
+
+    q.segment(11 + 4 * i, 4) = state.arm_qpos.block(1, i, 4, 1);
+    qd.segment(11 + 4 * i, 4) = state.arm_qvel.block(1, i, 4, 1);
+  }
+  q(10) = state.torso_qpos;
+  qd(10) = state.torso_qvel;
+
+  floating_base_dyn.updateModel(floating_base_state);
+  inertia = floating_base_dyn._A.block(0, 0, 3, 3);
+}
+
 // 更新mpc参数
-void H1Mpc::update_mpc(Matrix<double, 3, 2> foot_pos, VectorXd state_des,
-                       Vector<double, 13> state_cur,
+void H1Mpc::update_mpc(Matrix<double, 3, 2> foot_pos, VectorXd &state_des,
+                       Vector<double, 13> &state_cur,
                        Matrix<int, -1, 2> gait_table, double x_drag,
                        double dt) {
 
