@@ -115,6 +115,9 @@ void H1FSM::run(int mode) {
 
   iterationCounter++;
 
+  for (int i = 2; i < 4; ++i)
+    state_cur.contact_phase(i) = 0;
+
   // 站立模式
   if (mode == STANDING) {
     gait = standing;
@@ -130,8 +133,6 @@ void H1FSM::run(int mode) {
 
     for (int i = 0; i < 2; ++i)
       state_cur.contact_phase(i) = gait->getContactState()(i);
-    for (int i = 2; i < 4; ++i)
-      state_cur.contact_phase(i) = 0;
 
     demo->stepping_demo(lin_vel_cmd, angle_vel_cmd, traj_integrate,
                         swing_height, body_height_motion);
@@ -140,8 +141,6 @@ void H1FSM::run(int mode) {
 
     for (int i = 0; i < 2; ++i)
       state_cur.contact_phase(i) = gait->getContactState()(i);
-    for (int i = 2; i < 4; ++i)
-      state_cur.contact_phase(i) = 0;
 
     demo->walking_demo(lin_vel_cmd, angle_vel_cmd, traj_integrate, swing_height,
                        body_height_motion);
@@ -267,44 +266,55 @@ void H1FSM::updateWbcData() {
       RotMat * state_cur.euler_angle_vel;
   wbc_data.state.bodyVelocity.segment(3, 3) = RotMat * state_cur.lin_vel;
 
-  std::vector<int> transLeg = {1, 0, 2, 3}; //[todo]
-  // for (int i = 0; i < 4; ++i) {
-  //   wbc_data.state.q.segment(transLeg[i] * 3, 3) = state_cur.leg_qpos.col(i);
-  //   wbc_data.state.qd.segment(transLeg[i] * 3, 3) =
-  //   state_cur.leg_qvel.col(i);
-  // }
+  for (int i = 0; i < 2; ++i) {
+    wbc_data.state.q.segment(i * 5, 5) = state_cur.leg_qpos.col(i);
+    wbc_data.state.qd.segment(i * 5, 5) = state_cur.leg_qvel.col(i);
+  }
+  wbc_data.state.q(10) = state_cur.torso_qpos;
+  wbc_data.state.qd(10) = state_cur.torso_qvel;
+  for (int i = 0; i < 2; ++i) {
+    wbc_data.state.q.segment(i * 4 + 11, 4) =
+        state_cur.arm_qpos.block(1, i, 4, 1);
+    wbc_data.state.qd.segment(i * 4 + 11, 4) =
+        state_cur.arm_qvel.block(1, i, 4, 1);
+  }
 
   wbc_data.pBody_des = state_des.pos;
+  std::cout << "state_cur.pos\n" << state_cur.pos << std::endl;
+  std::cout << "state_des.pos\n" << state_des.pos << std::endl;
   wbc_data.vBody_des = state_des.lin_vel;
   wbc_data.aBody_des = state_des.lin_acc;
   wbc_data.pBodyOri_des = ori::rpyToQuat(state_des.euler_angle);
   wbc_data.vBodyOri_des = state_des.euler_angle_vel;
 
   for (int i = 0; i < 2; ++i) {
-    wbc_data.pEnd_des[transLeg[i]] = state_des.foot_pos_world.col(i);
+    wbc_data.pEnd_des[i] = state_des.foot_pos_world.col(i);
 
-    wbc_data.vEnd_des[transLeg[i]] = state_des.foot_vel_world.col(i);
-    wbc_data.aEnd_des[transLeg[i]] = Vec6::Zero();
+    wbc_data.vEnd_des[i] = state_des.foot_vel_world.col(i);
+    wbc_data.aEnd_des[i] = Vec6::Zero();
 
     if (state_cur.contact_phase(i) > 0 && state_cur.contact_phase(i) <= 1) {
-      wbc_data.contact_state[transLeg[i]] = 1;
+      wbc_data.contact_state[i] = 1;
     } else
-      wbc_data.contact_state[transLeg[i]] = 0;
+      wbc_data.contact_state[i] = 0;
 
-    wbc_data.Fr_des[transLeg[i]] = state_cur.grf_ref.segment(6 * i, 6);
+    wbc_data.Fr_des[i] = state_cur.grf_ref.segment(6 * i, 6);
   }
+  state_des.hand_pos_world << 0.0185, 0.0185, 0.21353, -0.21353, 0.911614,
+      0.911614, 0, 0, 0, 0, 0, 0;
+  state_des.hand_vel_world << 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0;
   for (int i = 2; i < 4; ++i) {
-    wbc_data.pEnd_des[transLeg[i]] = state_des.hand_pos_world.col(i);
+    wbc_data.pEnd_des[i] = state_des.hand_pos_world.col(i);
 
-    wbc_data.vEnd_des[transLeg[i]] = state_des.hand_vel_world.col(i);
-    wbc_data.aEnd_des[transLeg[i]] = Vec6::Zero();
+    wbc_data.vEnd_des[i] = state_des.hand_vel_world.col(i);
+    wbc_data.aEnd_des[i] = Vec6::Zero();
 
     if (state_cur.contact_phase(i) > 0 && state_cur.contact_phase(i) <= 1) {
-      wbc_data.contact_state[transLeg[i]] = 1;
+      wbc_data.contact_state[i] = 1;
     } else
-      wbc_data.contact_state[transLeg[i]] = 0;
+      wbc_data.contact_state[i] = 0;
 
-    wbc_data.Fr_des[transLeg[i]] = state_cur.grf_ref.segment(6 * i, 6);
+    wbc_data.Fr_des[i] = state_cur.grf_ref.segment(6 * i, 6);
   }
 }
 
@@ -340,5 +350,7 @@ void H1FSM::compute_joint_torques() {
 
 // 返回joint_torque发给电机控制器
 Matrix<double, 19, 1> H1FSM::get_joint_torques() {
+  // std::cout << "joint_torque = \n"
+  //           << state_cur.joint_torque.transpose() << std::endl;
   return state_cur.joint_torque;
 }

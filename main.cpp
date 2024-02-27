@@ -510,16 +510,16 @@ void WbcLoop(mj::Simulate &sim) {
         {
           if (FSM.wbc_update_needed) {
             FSM.compute_wbc();
+          }
+          std::this_thread::sleep_for(std::chrono::milliseconds(1));
 
-            // std::chrono::time_point<std::chrono::system_clock> t_end =
-            //     std::chrono::system_clock::now();
-            // double time_record =
-            //     std::chrono::duration_cast<std::chrono::milliseconds>(t_end -
-            //                                                           t_start)
-            //         .count();
-            // std::cout << "wbc_time: " << time_record / 1000 << "\n";
-          } else
-            std::this_thread::sleep_for(std::chrono::milliseconds(1));
+          // std::chrono::time_point<std::chrono::system_clock> t_end =
+          //     std::chrono::system_clock::now();
+          // double time_record =
+          //     std::chrono::duration_cast<std::chrono::milliseconds>(t_end -
+          //                                                           t_start)
+          //         .count();
+          // std::cout << "wbc_time: " << time_record / 1000 << "\n";
         }
       }
     }

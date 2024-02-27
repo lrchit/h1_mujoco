@@ -37,6 +37,10 @@ bool BodyPosTask::_UpdateCommand(const void *pos_des, const DVec &vel_des,
                      _Kd[i] * (TK::vel_des_[i] - curr_vel[i + 3]) +
                      TK::acc_des_[i];
   }
+  std::cout << "op_cmd_\n" << op_cmd_.transpose() << std::endl;
+  std::cout << "pos_err_\n" << pos_err_.transpose() << std::endl;
+  std::cout << "vel_des_\n" << vel_des_.transpose() << std::endl;
+  std::cout << "curr_vel\n" << curr_vel.transpose() << std::endl;
 
   // std::cout << TK::op_cmd_.transpose() <<std::endl;
   // Quat quat = _robot_sys->_state.bodyOrientation;

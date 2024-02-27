@@ -68,15 +68,16 @@ void H1Wbc::run(const WbcData &input_data, Vec19 &joint_tau) {
 
   _UpdateLimbCMD(joint_torques_temp, input_data);
 
-  std::vector<int> transLimb = {1, 0, 2, 3};
-  for (int limb = 0; limb < 2; limb++) {
-    joint_tau.segment(5 * limb, 5) =
-        joint_torques_temp.segment(5 * transLimb[limb], 5);
+  // std::cout << "joint_torques_temp = \n"
+  //           << joint_torques_temp.transpose() << std::endl;
+
+  for (int leg = 0; leg < 2; leg++) {
+    joint_tau.segment(5 * leg, 5) = joint_torques_temp.segment(5 * leg, 5);
   }
   joint_tau(10) = joint_torques_temp(10);
   for (int arm = 0; arm < 2; arm++) {
     joint_tau.segment(4 * arm + 11, 4) =
-        joint_torques_temp.segment(4 * transLimb[arm + 2] + 11, 4);
+        joint_torques_temp.segment(4 * arm + 11, 4);
   }
 }
 
