@@ -52,7 +52,7 @@ public:
 protected:
   // full rank fat matrix only (inverse matrix with weight)
   void _WeightedInverse(const DMat &J, const DMat &Winv, DMat &Jinv,
-                        double threshold = 0.0001) {
+                        double threshold = 0.001) {
     DMat lambda(J * Winv * J.transpose());
     DMat lambda_inv;
     pseudoInverse(lambda, threshold, lambda_inv);

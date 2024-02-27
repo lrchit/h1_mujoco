@@ -37,6 +37,12 @@ bool LinkPosTask::_UpdateCommand(const void *pos_des, const DVec &vel_des,
         _Kd[i] * (TK::vel_des_[i] - robot_sys_->_vGC[link_idx_][i]) +
         TK::acc_des_[i];
   }
+  // std::cout << "op_cmd_\n" << op_cmd_.transpose() << std::endl;
+  // std::cout << "pos_err_\n" << pos_err_.transpose() << std::endl;
+  // std::cout << "vel_des_\n" << vel_des_.transpose() << std::endl;
+  // std::cout << "curr_vel\n"
+  //           << robot_sys_->_vGC[link_idx_].transpose() << std::endl;
+  // std::cout << "acc_des_\n" << acc_des_.transpose() << std::endl;
 
   // printf("[Link Pos Task]\n");
   // pretty_print(acc_des, std::cout, "acc_des");

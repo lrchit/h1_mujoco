@@ -46,7 +46,6 @@ private:
   WbcData wbc_data;
 
   Matrix<double, 6, 2> foot_forces_kin;
-  Matrix<double, 5, 2> leg_joint_torque_kin;
 
   int counter;
 

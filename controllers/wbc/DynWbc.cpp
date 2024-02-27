@@ -87,6 +87,8 @@ void DynWbc::_ContactBuilding() {
                                   // matrix dim for for loop
 
   _Jc.block(0, 0, dim_accumul_rf, num_qdot_) = Jc;
+  // std::cout << "[Jc_0]\n" << Jc << std::endl;
+  // std::cout << "[_Jc]\n" << _Jc << std::endl;
   _JcDotQdot.head(dim_accumul_rf) = JcDotQdot;
   _Uf.block(0, 0, dim_accumul_uf, dim_accumul_rf) = Uf;
   _Uf_ieq_vec_lb.head(dim_accumul_uf) = Uf_ieq_vec_lb;
@@ -105,6 +107,8 @@ void DynWbc::_ContactBuilding() {
 
     // Jc append
     _Jc.block(dim_accumul_rf, 0, dim_new_rf, num_qdot_) = Jc;
+    // std::cout << "[Jc]\n" << Jc << std::endl;
+    // std::cout << "[_Jc]\n" << _Jc << std::endl;
 
     // JcDotQdot append
     _JcDotQdot.segment(dim_accumul_rf, dim_new_rf) = JcDotQdot;
@@ -199,6 +203,9 @@ void DynWbc::MakeTorque(DVec &cmd, void *extra_input) {
   DMat JcBar;
   DMat Npre;
 
+  static Eigen::Matrix<double, 25, 25> A_inv_static;
+  static Eigen::Matrix<double, 12, 25> _Jc_static;
+  static Eigen::Matrix<double, 25, 12> JcBar_static;
   if (_dim_rf > 0) {
     // Contact Setting
     _ContactBuilding();
@@ -207,7 +214,18 @@ void DynWbc::MakeTorque(DVec &cmd, void *extra_input) {
     _SetInEqualityConstraint();
     _WeightedInverse(_Jc, Ainv_, JcBar);
     qddot_pre = JcBar * (-_JcDotQdot);
-    // std::cout << "[_JcDotQdot]" << _JcDotQdot.transpose() << std::endl;
+    // std::cout << "[_Jc]\n" << (_Jc - _Jc_static).norm() << std::endl;
+    // std::cout << "[Ainv_]\n" << (Ainv_ - A_inv_static).norm() << std::endl;
+    // _Jc_static = _Jc;
+    // A_inv_static = Ainv_;
+    // std::cout << "[JcBar]\n" << (JcBar - JcBar_static).norm() << std::endl;
+    // if ((JcBar - JcBar_static).norm() > 100)
+    //   exit(0);
+    // JcBar_static = JcBar;
+    // // std::cout << "[_JcDotQdot]\n" << _JcDotQdot.transpose() << std::endl;
+    // std::cout << "[qddot_pre_0]\n"
+    //           << qddot_pre.block(0, 0, 6, 1).transpose() << "\n"
+    //           << std::endl;
     Npre = _eye - JcBar * _Jc;
     // std::cout << "[JcBar]" << JcBar << std::endl;
     // pretty_print(JcBar, std::cout, "JcBar");
@@ -223,8 +241,6 @@ void DynWbc::MakeTorque(DVec &cmd, void *extra_input) {
   DMat Jt, JtBar, JtPre;
   DVec JtDotQdot, xddot;
 
-  std::cout << "[qddot_pre_0]\n"
-            << qddot_pre.block(0, 0, 6, 1).transpose() << std::endl;
   for (int i = 0; i < (*_task_list).size(); ++i) {
     // std::cout << i << std ::endl;
     task = (*_task_list)[i];
@@ -251,9 +267,13 @@ void DynWbc::MakeTorque(DVec &cmd, void *extra_input) {
     qddot_pre += JtBar * (xddot - JtDotQdot - Jt * qddot_pre);
     Npre = Npre * (_eye - JtBar * JtPre);
 
-    std::cout << "[xddot_" << i + 1 << "]\n" << xddot.transpose() << std::endl;
-    std::cout << "[qddot_pre_" << i + 1 << "]\n"
-              << qddot_pre.block(0, 0, 6, 1).transpose() << std::endl;
+    // std::cout << "[xddot_" << i + 1 << "]\n" << xddot.transpose() <<
+    // std::endl;
+    // std::cout << "delta_qddot_pre_" << i + 1 << "]\n"
+    //           << (JtBar * (xddot - JtDotQdot - Jt * qddot_pre))
+    //                  .block(0, 0, 6, 1)
+    //                  .transpose()
+    //           << std::endl;
   }
   // std::cout << "[qddot_pre_5]\n"
   //           << qddot_pre.block(0, 0, 6, 1).transpose() << "\n"

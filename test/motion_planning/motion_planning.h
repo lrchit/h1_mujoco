@@ -18,7 +18,6 @@ public:
   void generate_swing_ctrl(bool use_wbc, Gait *gait, const H1State &state_cur,
                            H1State &state_des,
                            Matrix<double, 6, 2> &foot_forces_kin,
-                           Matrix<double, 5, 2> &leg_joint_torque_kin,
                            double swing_height);
 
   void update_command(Vector3d lin_vel_cmd, Vector3d angle_vel_cmd,
@@ -36,8 +35,6 @@ private:
 
   Matrix<double, 6, 6> kpCartesian;
   Matrix<double, 6, 6> kdCartesian;
-  Matrix<double, 5, 5> kpJoint;
-  Matrix<double, 5, 5> kdJoint;
 
   Vector3d xyz_vel_des;
 

@@ -28,31 +28,19 @@ r4: 1e-6
 r5: 1e-6
 r6: 1e-6
 
-kp_cartesian_x: 0
-kp_cartesian_y: 0
-kp_cartesian_z: 0
-kp_cartesian_roll: 0
-kp_cartesian_pitch: 0
-kp_cartesian_yaw: 0
+kp_cartesian_x: 2000
+kp_cartesian_y: 800
+kp_cartesian_z: 1200
+kp_cartesian_roll: 2000
+kp_cartesian_pitch: 800
+kp_cartesian_yaw: 1200
 
-kd_cartesian_x: 0
-kd_cartesian_y: 0
-kd_cartesian_z: 0
-kd_cartesian_roll: 0
-kd_cartesian_pitch: 0
-kd_cartesian_yaw: 0
-
-kp_joint_1: 0.0
-kp_joint_2: 0.0
-kp_joint_3: 0.0
-kp_joint_4: 0.0
-kp_joint_5: 0.0
-
-kd_joint_1: 0.00
-kd_joint_2: 0.00
-kd_joint_3: 0.00
-kd_joint_4: 0.00
-kd_joint_5: 0.00
+kd_cartesian_x: 5
+kd_cartesian_y: 5
+kd_cartesian_z: 1
+kd_cartesian_roll: 5
+kd_cartesian_pitch: 5
+kd_cartesian_yaw: 1
 
 body_height_stand: 0.8
 body_height_motion: 0.8

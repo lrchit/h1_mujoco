@@ -70,11 +70,11 @@ void H1FSM::main_program() {
 
     // 3种模式，站立，踏步，行走
     // 先切力控站立再运动
-    if (counter < 2000000) {
+    if (counter < 2000) {
       // std::cout << "***************** standing *****************\n"
       //           << std::endl;
       mode = STANDING;
-    } else if (counter < 550000) {
+    } else if (counter < 5500000) {
       // std::cout << "***************** stepping *****************\n"
       //           << std::endl;
       mode = STEPPING;
@@ -163,8 +163,7 @@ void H1FSM::run(int mode) {
 
   // 生成摆动腿控制
   motion_planning->generate_swing_ctrl(use_wbc, gait, state_cur, state_des,
-                                       foot_forces_kin, leg_joint_torque_kin,
-                                       swing_height);
+                                       foot_forces_kin, swing_height);
 
   // 判断到达mpc更新周期
   if ((iterationCounter % iteration_between_mpc) == 0) {
@@ -280,8 +279,8 @@ void H1FSM::updateWbcData() {
   }
 
   wbc_data.pBody_des = state_des.pos;
-  std::cout << "state_cur.pos\n" << state_cur.pos << std::endl;
-  std::cout << "state_des.pos\n" << state_des.pos << std::endl;
+  // std::cout << "state_cur.pos\n" << state_cur.pos << std::endl;
+  // std::cout << "state_des.pos\n" << state_des.pos << std::endl;
   wbc_data.vBody_des = state_des.lin_vel;
   wbc_data.aBody_des = state_des.lin_acc;
   wbc_data.pBodyOri_des = ori::rpyToQuat(state_des.euler_angle);
@@ -300,6 +299,8 @@ void H1FSM::updateWbcData() {
 
     wbc_data.Fr_des[i] = state_cur.grf_ref.segment(6 * i, 6);
   }
+
+  // [todo]
   state_des.hand_pos_world << 0.0185, 0.0185, 0.21353, -0.21353, 0.911614,
       0.911614, 0, 0, 0, 0, 0, 0;
   state_des.hand_vel_world << 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0;
@@ -343,8 +344,7 @@ void H1FSM::compute_joint_torques() {
     grf_base.tail<3>() = state_cur.rot_mat * grf_world.tail<3>();
 
     state_cur.joint_torque.segment(5 * i, 5) =
-        jacobian.transpose() * (foot_forces_kin.col(i) - grf_base) +
-        leg_joint_torque_kin.col(i);
+        jacobian.transpose() * (foot_forces_kin.col(i) - grf_base);
   }
 }
 

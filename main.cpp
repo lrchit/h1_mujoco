@@ -67,6 +67,7 @@ mjtNum *ctrlnoise = nullptr;
 using Seconds = std::chrono::duration<double>;
 
 H1FSM FSM;
+int counter = 0;
 
 //---------------------------------------- plugin handling
 //-----------------------------------------
@@ -435,6 +436,12 @@ void PhysicsLoop(mj::Simulate &sim) {
         }
       }
     } // release std::lock_guard<std::mutex>
+
+    // counter++;
+    // if (counter == 20) {
+    //   std::cout << counter << std::endl;
+    //   exit(0);
+    // }
   }
 }
 } // namespace
@@ -603,8 +610,14 @@ void PhysicsThread(mj::Simulate *sim, const char *filename) {
   mj_forward(m, d);
   std::this_thread::sleep_for(
       std::chrono::milliseconds(1000)); // don't change this
-  std::cout << " ************************ controller ************************ "
-            << std::endl;
+  // std::cout
+  //     << "\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n "
+  //        "************************ controller ************************ \n "
+  //        "************************ controller ************************ \n "
+  //        "************************ controller ************************ \n "
+  //        "************************ controller ************************ "
+  //        "\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n"
+  //     << std::endl;
 
   PhysicsLoop(*sim);
 

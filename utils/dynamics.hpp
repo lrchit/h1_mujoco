@@ -47,7 +47,7 @@ public:
 
   ~FBDynModel() {}
 
-  std::vector<Matrix<double, 6, 5>>
+  std::vector<Matrix<double, 6, 25>>
       _Jc;                   // contact jacobian list (limb point jacobian)
   Matrix<double, 6, 5> _Jcd; // contact jacobian time derivation
   std::vector<Vec6> _Jcdqd;

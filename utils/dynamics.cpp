@@ -34,6 +34,7 @@ void FBDynModel::_updateMBkinmatics() {
                                 pinocchio::LOCAL_WORLD_ALIGNED,
                                 J); // LOCAL_WORLD_ALIGNED
     _Jc[i] = J.block(0, 0, 6, model.nv);
+    // std::cout << "model.nv = " << model.nv << std::endl;
 
     // this is also correct
     // xdd = pinocchio::getFrameAcceleration(model, data, frame_id,

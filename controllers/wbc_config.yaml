@@ -1,20 +1,20 @@
 
-kp_joint_leg_1: 5
-kp_joint_leg_2: 5
-kp_joint_leg_3: 5
-kp_joint_leg_4: 5
-kp_joint_leg_5: 5
+kp_joint_leg_1: 20
+kp_joint_leg_2: 20
+kp_joint_leg_3: 20
+kp_joint_leg_4: 20
+kp_joint_leg_5: 20
 kp_joint_torso: 5
 kp_joint_arm_1: 5
 kp_joint_arm_2: 5
 kp_joint_arm_3: 5
 kp_joint_arm_4: 5
 
-kd_joint_leg_1: 0.5
-kd_joint_leg_2: 0.5
-kd_joint_leg_3: 0.5
-kd_joint_leg_4: 0.5
-kd_joint_leg_5: 0.5
+kd_joint_leg_1: 5
+kd_joint_leg_2: 5
+kd_joint_leg_3: 5
+kd_joint_leg_4: 5
+kd_joint_leg_5: 5
 kd_joint_torso: 0.5
 kd_joint_arm_1: 0.5
 kd_joint_arm_2: 0.5
@@ -26,8 +26,8 @@ kp_body_ori_x: 0.25
 kp_body_ori_y: 0.25
 kp_body_ori_z: 20
 
-kd_body_ori_x: 0
-kd_body_ori_y: 0
+kd_body_ori_x: 0.5
+kd_body_ori_y: 0.5
 kd_body_ori_z: 0.5
 
 kp_body_pos_x: 2
@@ -38,25 +38,25 @@ kd_body_pos_x: 0.2
 kd_body_pos_y: 0.4
 kd_body_pos_z: 1
 
-kp_foot_x: 3000
-kp_foot_y: 3000
-kp_foot_z: 5000
-kp_foot_roll: 3000
-kp_foot_pitch: 3000
-kp_foot_yaw: 5000
-kp_hand_x: 3000
-kp_hand_y: 3000
-kp_hand_z: 5000
-kp_hand_roll: 3000
-kp_hand_pitch: 3000
-kp_hand_yaw: 5000
+kp_foot_x: 300
+kp_foot_y: 300
+kp_foot_z: 500
+kp_foot_roll: 300
+kp_foot_pitch: 300
+kp_foot_yaw: 300
+kp_hand_x: 10
+kp_hand_y: 10
+kp_hand_z: 10
+kp_hand_roll: 10
+kp_hand_pitch: 10
+kp_hand_yaw: 10
 
-kd_foot_x: 10
-kd_foot_y: 10
-kd_foot_z: 10
-kd_foot_roll: 10
-kd_foot_pitch: 10
-kd_foot_yaw: 10
+kd_foot_x: 1
+kd_foot_y: 1
+kd_foot_z: 1
+kd_foot_roll: 1
+kd_foot_pitch: 1
+kd_foot_yaw: 1
 kd_hand_x: 1
 kd_hand_y: 1
 kd_hand_z: 1
@@ -64,6 +64,6 @@ kd_hand_roll: 1
 kd_hand_pitch: 1
 kd_hand_yaw: 1
 
-weight_floating: 50
+weight_floating: 500
 weight_reaction_force: 1
 
