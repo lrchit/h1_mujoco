@@ -70,7 +70,7 @@ void H1FSM::main_program() {
 
     // 3种模式，站立，踏步，行走
     // 先切力控站立再运动
-    if (counter < 2000) {
+    if (counter < 2000000) {
       // std::cout << "***************** standing *****************\n"
       //           << std::endl;
       mode = STANDING;
@@ -244,6 +244,7 @@ void H1FSM::compute_mpc() {
   for (int i = 0; i < 2; ++i) {
     state_cur.grf_ref.segment(6 * i, 6) =
         solution.segment(6 * i, 6) * gait_table(0, i);
+    // state_cur.grf_ref(6 * i + 3) = 0;
   }
 }
 
@@ -301,9 +302,13 @@ void H1FSM::updateWbcData() {
   }
 
   // [todo]
-  state_des.hand_pos_world << 0.0185, 0.0185, 0.21353, -0.21353, 0.911614,
-      0.911614, 0, 0, 0, 0, 0, 0;
-  state_des.hand_vel_world << 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0;
+  state_des.hand_pos_base << 0.0185, 0.0185, 0.21353, -0.21353, 0.111114,
+      0.111114, 0, 0, 0, 0, 0, 0;
+  state_des.hand_vel_base << 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0;
+  state_des.hand_pos_world = state_des.hand_pos_base;
+  state_des.hand_pos_world(4) = state_des.hand_pos_base(4) + 0.8;
+  state_des.hand_pos_world(5) = state_des.hand_pos_base(5) + 0.8;
+  state_des.hand_vel_world = state_des.hand_vel_base;
   for (int i = 2; i < 4; ++i) {
     wbc_data.pEnd_des[i] = state_des.hand_pos_world.col(i);
 

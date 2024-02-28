@@ -70,7 +70,7 @@
         "regex": "cpp",
         "shared_mutex": "cpp"
     },
-    "workbench.colorTheme": "Visual Studio Light",
+    "workbench.colorTheme": "Default Dark Modern",
     "workbench.editor.decorations.colors": true,
     "workbench.preferredDarkColorTheme": "Default Dark Modern"
 }

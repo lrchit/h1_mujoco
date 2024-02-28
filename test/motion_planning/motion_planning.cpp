@@ -35,6 +35,9 @@ MotionPlanning::MotionPlanning(std::vector<kinematics> _limb_kin) {
     firstSwing[i] = true;
   }
   swing_state.setZero();
+
+  foot_hold.setZero();
+  swing_state.setZero();
 }
 
 // imu得到的rpy是(-pi，pi)，state_des.euler_angle也需要控制在这范围内
@@ -101,10 +104,12 @@ void MotionPlanning::generate_swing_ctrl(bool use_wbc, Gait *gait,
         state_cur.rot_mat * (state_des.foot_vel_world.block(0, i, 3, 1) +
                              state_cur.euler_angle_vel);
   }
-  std::cout << "state_cur.foot_pos_world\n"
-            << state_cur.foot_pos_world << std::endl;
-  std::cout << "state_cur.foot_pos_base\n"
-            << state_cur.foot_pos_base << std::endl;
+  // std::cout << "state_des.foot_pos_base\n"
+  //           << state_des.foot_pos_base << std::endl;
+  // std::cout << "state_cur.foot_pos_base\n"
+  //           << state_cur.foot_pos_base << std::endl;
+  if (state_cur.foot_pos_base(1, 1) >= 0)
+    exit(0);
 
   // 计算关节力矩
   if (!use_wbc) {
@@ -140,7 +145,7 @@ void MotionPlanning::config_foot_hold(const H1State &state_cur,
                                       double swing_height) {
   // 配置落足点
   Matrix<double, 3, 2> foot_location_offset;
-  foot_location_offset << 0.039468, 0.039468, 0.20286, -0.20286, 0, 0;
+  foot_location_offset << 0.039468, 0.039468, 0.20285, -0.20285, 0, 0;
 
   // 计算控制量
   for (int i = 0; i < 2; ++i) {
@@ -208,7 +213,7 @@ void MotionPlanning::config_foot_hold(const H1State &state_cur,
       firstSwing[i] = true;
     }
   }
-  std::cout << "foot_hold\n" << foot_hold << std::endl;
+  // std::cout << "foot_hold\n" << foot_hold << std::endl;
 }
 
 // 更新指令
