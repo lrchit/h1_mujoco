@@ -36,15 +36,10 @@ void FBDynModel::_updateMBkinmatics() {
     _Jc[i] = J.block(0, 0, 6, model.nv);
     // std::cout << "model.nv = " << model.nv << std::endl;
 
-    // this is also correct
-    // xdd = pinocchio::getFrameAcceleration(model, data, frame_id,
-    //                                       pinocchio::LOCAL_WORLD_ALIGNED)
-    //           .linear();
-    // _Jcdqd[i] = xdd;
     J.setZero();
     pinocchio::getFrameJacobianTimeVariation(model, data, frame_id,
                                              pinocchio::LOCAL_WORLD_ALIGNED, J);
-    // this is not the member qd here, actually the qd is v
+    // this is not qd here, it's v (full config)
     _Jcdqd[i] = J.block(0, 0, 6, model.nv) * v;
 
     xd = pinocchio::getFrameVelocity(model, data, frame_id,
@@ -52,13 +47,19 @@ void FBDynModel::_updateMBkinmatics() {
     _vGC[i] = xd;
 
     x.segment(0, 3) = data.oMf[frame_id].translation();
-    Matrix3d rot_mat(data.oMf[frame_id].rotation());
-    Quat quat_end_to_base = ori::rotationMatrixToQuaternion(rot_mat);
-    x.segment(3, 3) = ori::quatToRPY(quat_end_to_base);
+    Matrix3d rot_mat_world_to_end(data.oMf[frame_id].rotation().transpose());
+    Quat quat_world_to_end =
+        ori::rotationMatrixToQuaternion(rot_mat_world_to_end);
+    x.segment(3, 3) = ori::quatToRPY(quat_world_to_end);
     _pGC[i] = x;
 
-    if (i == 3)
-      std::cout << "pGC\n" << _pGC[i].transpose() << std::endl;
+    if (i == 3) {
+      // std::cout << "rot_mat_world_to_end" << rot_mat_world_to_end <<
+      // std::endl; std::cout << "x\n" << x.segment(0, 3).transpose() <<
+      // std::endl; std::cout << "quat_world_to_end\n"
+      //           << quat_world_to_end.transpose() << std::endl;
+      // std::cout << "pGC\n" << _pGC[i].transpose() << std::endl;
+    }
   }
 
   // std::vector<std::string> frame_name;

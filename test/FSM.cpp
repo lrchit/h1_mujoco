@@ -310,6 +310,8 @@ void H1FSM::updateWbcData() {
   state_des.hand_pos_world = state_des.hand_pos_base;
   state_des.hand_pos_world.block(0, 0, 3, 1) += state_cur.pos;
   state_des.hand_pos_world.block(0, 1, 3, 1) += state_cur.pos;
+  state_des.hand_pos_world.block(3, 0, 3, 1) += state_cur.euler_angle;
+  state_des.hand_pos_world.block(3, 1, 3, 1) += state_cur.euler_angle;
   state_des.hand_vel_world = state_des.hand_vel_base;
   for (int i = 2; i < 4; ++i) {
     wbc_data.pEnd_des[i] = state_des.hand_pos_world.col(i - 2);

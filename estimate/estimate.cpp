@@ -85,6 +85,9 @@ void H1Estm::cheater_compute_state(H1State &state, mjData *d) {
   Vector<double, 4> q(d->qpos[3], d->qpos[4], d->qpos[5], d->qpos[6]);
   state.euler_angle = ori::quatToRPY(q);
   state.rot_mat = ori::quaternionToRotationMatrix(q);
+  // std::cout << "state.rot_mat\n" << state.rot_mat << std::endl;
+  // std::cout << "state.euler_angle\n"
+  //           << ori::rpyToRotMat(state.euler_angle) << std::endl;
 
   // --- get linvel ---
   for (int i = 0; i < 3; ++i) {

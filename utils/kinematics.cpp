@@ -24,9 +24,9 @@ void kinematics::forward_kin_frame(Vector<double, 5> q, Vector<double, 5> dq,
 
   x.segment(0, 3) = end_effector_placement.translation();
 
-  Matrix3d rot_mat(end_effector_placement.rotation());
-  Quat quat_end_to_base = ori::rotationMatrixToQuaternion(rot_mat);
-  x.segment(3, 3) = ori::quatToRPY(quat_end_to_base);
+  Matrix3d rot_mat_base_to_end(end_effector_placement.rotation().transpose());
+  Quat quat_base_to_end = ori::rotationMatrixToQuaternion(rot_mat_base_to_end);
+  x.segment(3, 3) = ori::quatToRPY(quat_base_to_end);
 
   // 计算并获取末端执行器的速度向量（包含线速度和角速度）
   dx = pinocchio::getFrameVelocity(model, data, FRAME_ID,

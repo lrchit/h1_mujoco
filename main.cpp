@@ -582,6 +582,7 @@ void PhysicsThread(mj::Simulate *sim, const char *filename) {
       double qpos_init[] = {// pelvis pos
                             0, 0, 0.8 + 0.005,
                             // pelvis quat
+                            // 0.961, 0.276, 0, 0,
                             1, 0, 0, 0,
                             // left leg
                             0, 0, -0.800729, 1.60146, -0.800729,

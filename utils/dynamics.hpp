@@ -23,9 +23,9 @@ struct FBModelState {
   Quat bodyOrientation; // world frame [wxyz]
   Vec3 bodyPosition;    // world frame
   SVec bodyVelocity;    // local frame [ang_vel, lin_vel]
-  Vec19 q;  // q here is 19 dof and the order should be "left_leg", //
-            // "torso_joint","right_leg", "left_arm", "right_arm"
-  Vec19 qd; // here is 19 dof
+  Vec19 q;              // q here is 19 dof and the order should be "left_leg",
+                        // "torso_joint","right_leg", "left_arm", "right_arm"
+  Vec19 qd;             // here is 19 dof
 };
 
 class FBDynModel {
