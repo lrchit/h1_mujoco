@@ -40,7 +40,7 @@ bool LinkPosTask::_UpdateCommand(const void *pos_des, const DVec &vel_des,
   // if (link_idx_ == 3) {
   //   std::cout << "op_cmd_\n" << op_cmd_.transpose() << std::endl;
   //   std::cout << "pos_cmd\n" << pos_cmd->transpose() << std::endl;
-  std::cout << "pos_err_\n" << pos_err_.transpose() << std::endl;
+  // std::cout << "pos_err_\n" << pos_err_.transpose() << std::endl;
   //   // std::cout << "vel_des_\n" << vel_des_.transpose() << std::endl;
   //   // std::cout << "curr_vel\n"
   //   //           << robot_sys_->_vGC[link_idx_].transpose() << std::endl;

@@ -24,6 +24,7 @@ public:
   Matrix<double, 19, 1> get_joint_torques();
 
   bool use_wbc;
+  bool etsm_update_needed;
   bool mpc_update_needed;
   bool wbc_update_needed;
 

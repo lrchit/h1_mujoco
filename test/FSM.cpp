@@ -40,6 +40,7 @@ H1FSM::H1FSM() {
 
   counter = 0;
   iterationCounter = 0;
+  etsm_update_needed = false;
   mpc_update_needed = false;
   wbc_update_needed = false;
 
@@ -175,17 +176,17 @@ void H1FSM::run(int mode) {
   } else {
     compute_joint_torques();
   }
+  etsm_update_needed = true;
 }
 
 // 状态估计
 void H1FSM::state_estimate(mjData *d) {
+  etsm_update_needed = false;
   estimater->call_state_estimator(state_cur, d);
 }
 
 // 更新mpc需要的参数
 void H1FSM::updateMpcData() {
-
-  mpc_update_needed = false;
 
   // --- state_des_vec ---
   VectorXd state_des_vec;
@@ -232,6 +233,7 @@ void H1FSM::updateMpcData() {
 
 // 求解mpc
 void H1FSM::compute_mpc() {
+  mpc_update_needed = false;
 
   // update
   updateMpcData();
@@ -332,6 +334,7 @@ void H1FSM::updateWbcData() {
 
 // 求解wbc
 void H1FSM::compute_wbc() {
+  wbc_update_needed = false;
   // update
   updateWbcData();
   // --- solve the qp ---
