@@ -25,7 +25,8 @@ public:
   ~kinematics();
 
   // forward kin
-  void forward_kin_frame(Vector<double, 5> q, Vector<double, 5> dq,
+  void forward_kin_frame(Vector<double, 7> qbase, Vector<double, 6> qdbase,
+                         Vector<double, 5> qlimb, Vector<double, 5> qdlimb,
                          Vector<double, 6> &x, Vector<double, 6> &dx,
                          std::string frame_name);
 
@@ -38,7 +39,4 @@ public:
 
   pinocchio::Model model;
   pinocchio::Data data;
-
-  Matrix<double, 6, 5> get_limb_jacobian(Vector<double, 5> q,
-                                         std::string frame_name);
 };

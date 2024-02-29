@@ -85,57 +85,6 @@ void MotionPlanning::generate_swing_ctrl(bool use_wbc, Gait *gait,
         footSwingTrajectories[i].get_swing_pos(swing_state(i));
     state_des.foot_vel_world.col(i) =
         footSwingTrajectories[i].get_swing_vel(swing_state(i));
-    // 获取轨迹上的足点，机体系[todo]
-    state_des.foot_pos_base.block(0, i, 3, 1) =
-        state_cur.rot_mat *
-        (state_des.foot_pos_world.block(0, i, 3, 1) - state_cur.pos);
-    Matrix3d rot_world_to_foot =
-        ori::rpyToRotMat(state_des.foot_pos_world.block(3, i, 3, 1));
-    Matrix3d rot_base_to_foot =
-        state_cur.rot_mat.transpose() * rot_world_to_foot;
-    Quat quat_base_to_foot = ori::rotationMatrixToQuaternion(rot_base_to_foot);
-    state_des.foot_pos_base.block(3, i, 3, 1) =
-        ori::quatToRPY(quat_base_to_foot);
-
-    state_des.foot_vel_base.block(0, i, 3, 1) =
-        state_cur.rot_mat *
-        (state_des.foot_vel_world.block(0, i, 3, 1) - state_cur.lin_vel);
-    state_des.foot_vel_base.block(3, i, 3, 1) =
-        state_cur.rot_mat * (state_des.foot_vel_world.block(0, i, 3, 1) +
-                             state_cur.euler_angle_vel);
-  }
-  // std::cout << "state_des.foot_pos_base\n"
-  //           << state_des.foot_pos_base << std::endl;
-  // std::cout << "state_cur.foot_pos_base\n"
-  //           << state_cur.foot_pos_base << std::endl;
-  if (state_cur.foot_pos_base(1, 1) >= 0)
-    exit(0);
-
-  // 计算关节力矩
-  if (!use_wbc) {
-    Matrix<double, 6, 2> foot_pos_error;
-    Matrix<double, 6, 2> foot_vel_error;
-    for (int i = 0; i < 2; ++i) {
-      // 摆动腿，在Cartesian下规划
-      if (swing_state(i) > 0) {
-        // 摆动腿完全用pd
-        foot_pos_error.col(i) =
-            state_des.foot_pos_base.col(i) - state_cur.foot_pos_base.col(i);
-        foot_vel_error.col(i) =
-            state_des.foot_vel_base.col(i) - state_cur.foot_vel_base.col(i);
-
-      } else {
-        // 支撑腿
-        foot_pos_error.col(i) =
-            (state_des.foot_pos_base.col(i) - state_cur.foot_pos_base.col(i)) *
-            0;
-        foot_vel_error.col(i) =
-            (state_des.foot_vel_base.col(i) - state_cur.foot_vel_base.col(i));
-      }
-      // pd控制
-      foot_forces_kin.col(i) = kpCartesian * foot_pos_error.col(i) +
-                               kdCartesian * foot_vel_error.col(i);
-    }
   }
 }
 
@@ -145,7 +94,7 @@ void MotionPlanning::config_foot_hold(const H1State &state_cur,
                                       double swing_height) {
   // 配置落足点
   Matrix<double, 3, 2> foot_location_offset;
-  foot_location_offset << 0.039468, 0.039468, 0.20285, -0.20285, 0, 0;
+  foot_location_offset << 0.00, 0.00, 0.20285, -0.20285, 0, 0;
 
   // 计算控制量
   for (int i = 0; i < 2; ++i) {

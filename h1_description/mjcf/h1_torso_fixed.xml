@@ -48,7 +48,7 @@
     <body name="pelvis" pos="0 0 1.1" childclass="h1">
       <inertial pos="-0.0002 4e-05 -0.04522" quat="0.498303 0.499454 -0.500496 0.501741" mass="5.39" diaginertia="0.0490211 0.0445821 0.00824619"/>
       <freejoint/>
-      <!-- <joint type="free" stiffness="10000" damping="1000000" frictionloss="0" armature="0" /> -->
+      <!-- <joint type="free" damping="1e8" frictionloss="0" armature="0" /> -->
       <geom class="visual" mesh="pelvis"/>
       <geom class="collision" mesh="pelvis"/>
       <body name="left_hip_yaw_link" pos="0 0.0875 -0.1742">
@@ -113,7 +113,7 @@
       </body>
       <body name="torso_link">
         <inertial pos="0.000489 0.002797 0.20484" quat="0.999989 -0.00130808 -0.00282289 -0.00349105" mass="17.789" diaginertia="0.487315 0.409628 0.127837"/>
-        <joint name="torso_joint" axis="0 0 1" range="-2.35 2.35" stiffness="10000" damping="1000000"/>
+        <joint name="torso_joint" axis="0 0 1" range="-2.35 2.35" damping="1e8"/>
         <geom class="visual" mesh="torso_link"/>
         <geom class="collision" mesh="torso_link"/>
         <geom class="visual" material="white" mesh="logo_link"/>

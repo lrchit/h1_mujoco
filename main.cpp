@@ -546,6 +546,9 @@ void EstimateLoop(mj::Simulate &sim) {
           // if (FSM.etsm_update_needed) {
           // estimate
           FSM.state_estimate(d);
+          for (int i = 0; i < 3; ++i) {
+            std::cout << "euler_angle_vel\n" << d->sensordata[i] << std::endl;
+          }
           // }
         }
 

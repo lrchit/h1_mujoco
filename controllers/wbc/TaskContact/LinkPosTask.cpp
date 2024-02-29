@@ -1,5 +1,6 @@
 
 #include "LinkPosTask.hpp"
+#include <orientation_tools.h>
 
 // (X, Y, Z, Roll, Pitch, Yaw)
 LinkPosTask::LinkPosTask(const FBDynModel *robot, int link_idx,
@@ -18,6 +19,71 @@ LinkPosTask::~LinkPosTask() {}
 
 bool LinkPosTask::_UpdateCommand(const void *pos_des, const DVec &vel_des,
                                  const DVec &acc_des) {
+  // Vec3 pos_cmd = ((Vec6 *)pos_des)->segment(0, 3);
+  // Vec3 link_pos(robot_sys_->_pGC[link_idx_].segment(0, 3));
+
+  // Vec3 ori_cmd_ = ((Vec6 *)pos_des)->segment(3, 3);
+  // Quat ori_cmd = ori::rpyToQuat(ori_cmd_);
+  // Vec3 link_ori_ = robot_sys_->_pGC[link_idx_].segment(3, 3);
+  // Quat link_ori = ori::rpyToQuat(link_ori_);
+
+  // Quat link_ori_inv;
+  // link_ori_inv[0] = link_ori[0];
+  // link_ori_inv[1] = -link_ori[1];
+  // link_ori_inv[2] = -link_ori[2];
+  // link_ori_inv[3] = -link_ori[3];
+  // // link_ori_inv /= link_ori.norm();
+
+  // // Explicit because operational space is in global frame
+  // Quat ori_err = ori::quatProduct(ori_cmd, link_ori_inv);
+
+  // // std::cout <<"[RPY]"<< ori::quatToRPY(link_ori).transpose() << std::endl;
+  // // std::cout <<"[RPY]"<< ori::quatToRPY(*ori_cmd).transpose() << std::endl;
+
+  // if (ori_err[0] < 0.) {
+  //   ori_err *= (-1.);
+  // }
+  // Vec3 ori_err_so3;
+  // ori::quaternionToso3(ori_err, ori_err_so3);
+
+  // // X, Y, Z
+  // for (int i(0); i < 3; ++i) {
+  //   TK::pos_err_[i] = _Kp_kin[i] * ((pos_cmd)[i] - link_pos[i]);
+  //   TK::vel_des_[i] = vel_des[i];
+  //   TK::acc_des_[i] = acc_des[i];
+
+  //   // Op acceleration command
+  //   TK::op_cmd_[i] =
+  //       _Kp[i] * TK::pos_err_[i] +
+  //       _Kd[i] * (TK::vel_des_[i] - robot_sys_->_vGC[link_idx_][i]) +
+  //       TK::acc_des_[i];
+  // }
+
+  // // Rx, Ry, Rz
+  // for (int i(3); i < 6; ++i) {
+  //   TK::pos_err_[i] = _Kp_kin[i] * ori_err_so3[i - 3];
+  //   TK::vel_des_[i] = vel_des[i];
+  //   TK::acc_des_[i] = acc_des[i];
+
+  //   // Op acceleration command
+  //   TK::op_cmd_[i] =
+  //       _Kp[i] * ori_err_so3[i - 3] +
+  //       _Kd[i] * (TK::vel_des_[i] - robot_sys_->_vGC[link_idx_][i]) +
+  //       TK::acc_des_[i];
+  // }
+
+  // if (link_idx_ == 2) {
+  //   std::cout << "ori_err_so3\n" << ori_err_so3.transpose() << std::endl;
+  //   //   std::cout << "op_cmd_\n" << op_cmd_.transpose() << std::endl;
+  //   //   std::cout << "pos_cmd\n" << pos_cmd->transpose() << std::endl;
+  //   // std::cout << "pos_err_\n" << pos_err_.transpose() << std::endl;
+  //   //   // std::cout << "vel_des_\n" << vel_des_.transpose() << std::endl;
+  //   //   // std::cout << "curr_vel\n"
+  //   //   //           << robot_sys_->_vGC[link_idx_].transpose() <<
+  //   std::endl;
+  //   //   // std::cout << "acc_des_\n" << acc_des_.transpose() << std::endl;
+  // }
+
   Vec6 *pos_cmd = (Vec6 *)pos_des;
   Vec6 link_pos;
 
@@ -37,24 +103,6 @@ bool LinkPosTask::_UpdateCommand(const void *pos_des, const DVec &vel_des,
         _Kd[i] * (TK::vel_des_[i] - robot_sys_->_vGC[link_idx_][i]) +
         TK::acc_des_[i];
   }
-  // if (link_idx_ == 3) {
-  //   std::cout << "op_cmd_\n" << op_cmd_.transpose() << std::endl;
-  //   std::cout << "pos_cmd\n" << pos_cmd->transpose() << std::endl;
-  // std::cout << "pos_err_\n" << pos_err_.transpose() << std::endl;
-  //   // std::cout << "vel_des_\n" << vel_des_.transpose() << std::endl;
-  //   // std::cout << "curr_vel\n"
-  //   //           << robot_sys_->_vGC[link_idx_].transpose() << std::endl;
-  //   // std::cout << "acc_des_\n" << acc_des_.transpose() << std::endl;
-  // }
-
-  // printf("[Link Pos Task]\n");
-  // pretty_print(acc_des, std::cout, "acc_des");
-  // pretty_print(TK::pos_err_, std::cout, "pos_err_");
-  // pretty_print(*pos_cmd, std::cout, "pos cmd");
-  // pretty_print(robot_sys_->_vGC[link_idx_], std::cout, "velocity");
-  // pretty_print(TK::op_cmd_, std::cout, "op cmd");
-  // TK::op_cmd_.setZero();
-  // pretty_print(TK::Jt_, std::cout, "Jt");
 
   return true;
 }

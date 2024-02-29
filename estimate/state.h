@@ -11,12 +11,8 @@ struct H1State {
     lin_acc.setZero();
     rot_mat.setZero();
 
-    foot_pos_base.setZero();
-    foot_vel_base.setZero();
     foot_pos_world.setZero();
     foot_vel_world.setZero();
-    hand_pos_base.setZero();
-    hand_vel_base.setZero();
     hand_pos_world.setZero();
     hand_vel_world.setZero();
 
@@ -40,12 +36,8 @@ struct H1State {
   Eigen::Vector3d lin_acc;
   Eigen::Matrix3d rot_mat;
 
-  Eigen::Matrix<double, 6, 2> foot_pos_base;
-  Eigen::Matrix<double, 6, 2> foot_vel_base;
   Eigen::Matrix<double, 6, 2> foot_pos_world;
   Eigen::Matrix<double, 6, 2> foot_vel_world;
-  Eigen::Matrix<double, 6, 2> hand_pos_base;
-  Eigen::Matrix<double, 6, 2> hand_vel_base;
   Eigen::Matrix<double, 6, 2> hand_pos_world;
   Eigen::Matrix<double, 6, 2> hand_vel_world;
 

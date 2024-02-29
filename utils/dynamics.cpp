@@ -53,13 +53,13 @@ void FBDynModel::_updateMBkinmatics() {
     x.segment(3, 3) = ori::quatToRPY(quat_world_to_end);
     _pGC[i] = x;
 
-    if (i == 3) {
-      // std::cout << "rot_mat_world_to_end" << rot_mat_world_to_end <<
-      // std::endl; std::cout << "x\n" << x.segment(0, 3).transpose() <<
-      // std::endl; std::cout << "quat_world_to_end\n"
-      //           << quat_world_to_end.transpose() << std::endl;
-      // std::cout << "pGC\n" << _pGC[i].transpose() << std::endl;
-    }
+    // if (i == 2) {
+    //   // std::cout << "xd\n" << xd.transpose() << std::endl;
+    //   // std::cout << "x\n" << x.segment(0, 3).transpose() <<
+    //   // std::endl; std::cout << "quat_world_to_end\n"
+    //   //           << quat_world_to_end.transpose() << std::endl;
+    //   // std::cout << "pGC\n" << _pGC[i].transpose() << std::endl;
+    // }
   }
 
   // std::vector<std::string> frame_name;

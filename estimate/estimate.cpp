@@ -10,64 +10,63 @@ H1Estm::H1Estm(std::vector<kinematics> _limb_kin) {
   limb_kin = _limb_kin;
 }
 
-void H1Estm::base_to_world(Vector<double, 6> &p_end_effector_base,
-                           Vector<double, 6> &v_end_effector_base,
-                           Vector<double, 6> &p_end_effector_world,
-                           Vector<double, 6> &v_end_effector_world,
-                           Vector<double, 6> p_base_world,
-                           Vector<double, 6> v_base_world) {
+// void H1Estm::base_to_world(Vector<double, 6> &p_end_effector_base,
+//                            Vector<double, 6> &v_end_effector_base,
+//                            Vector<double, 6> &p_end_effector_world,
+//                            Vector<double, 6> &v_end_effector_world,
+//                            Vector<double, 6> p_base_world,
+//                            Vector<double, 6> v_base_world) {
 
-  const Vector3d p_end_effector_base_linear =
-      p_end_effector_base.head<3>(); // 末端执行器在基座坐标系下的位置
-  const Vector3d p_end_effector_base_angular =
-      p_end_effector_base.tail<3>(); // 末端执行器在基座坐标系下的rpy
-  const Vector3d v_end_effector_base_linear =
-      v_end_effector_base.head<3>(); // 末端执行器相对于基座的线速度
-  const Vector3d v_end_effector_base_angular =
-      v_end_effector_base.tail<3>(); // 末端执行器相对于基座的角速度
+//   const Vector3d p_end_effector_base_linear =
+//       p_end_effector_base.head<3>(); // 末端执行器在基座坐标系下的位置
+//   const Vector3d p_end_effector_base_angular =
+//       p_end_effector_base.tail<3>(); // 末端执行器在基座坐标系下的rpy
+//   const Vector3d v_end_effector_base_linear =
+//       v_end_effector_base.head<3>(); // 末端执行器相对于基座的线速度
+//   const Vector3d v_end_effector_base_angular =
+//       v_end_effector_base.tail<3>(); // 末端执行器相对于基座的角速度
 
-  // 基座姿态数据
-  const Vector3d p_base_world_linear =
-      p_base_world.head<3>(); // 基座在世界坐标系下的位置
-  const Vector3d p_base_world_angular =
-      p_base_world.tail<3>(); // 基座在世界坐标系下的rpy
-  const Vector3d v_base_world_linear =
-      v_base_world.head<3>(); // 基座在世界坐标系下的线速度
-  const Vector3d v_base_world_angular =
-      v_base_world.tail<3>(); // 基座在世界坐标系下的角速度
+//   // 基座姿态数据
+//   const Vector3d p_base_world_linear =
+//       p_base_world.head<3>(); // 基座在世界坐标系下的位置
+//   const Vector3d p_base_world_angular =
+//       p_base_world.tail<3>(); // 基座在世界坐标系下的rpy
+//   const Vector3d v_base_world_linear =
+//       v_base_world.head<3>(); // 基座在世界坐标系下的线速度
+//   const Vector3d v_base_world_angular =
+//       v_base_world.tail<3>(); // 基座在世界坐标系下的角速度
 
-  // 获取基座到世界坐标系的旋转矩阵 R_world_to_base
-  const Matrix3d R_world_to_base =
-      ori::rpyToRotMat(p_base_world_angular).transpose();
-  // 获取end到base系的旋转矩阵 R_base_to_end
-  const Matrix3d R_base_to_end =
-      ori::rpyToRotMat(p_end_effector_base_angular).transpose();
+//   // 获取基座到世界坐标系的旋转矩阵 R_world_to_base
+//   const Matrix3d R_world_to_base =
+//       ori::rpyToRotMat(p_base_world_angular).transpose();
+//   // 获取end到base系的旋转矩阵 R_base_to_end
+//   const Matrix3d R_base_to_end =
+//       ori::rpyToRotMat(p_end_effector_base_angular).transpose();
 
-  Vector3d p_end_effector_world_linear =
-      R_world_to_base * p_end_effector_base_linear + p_base_world_linear;
-  Matrix3d R_world_to_end = R_world_to_base * R_base_to_end;
-  Quat quat_world_to_end =
-      ori::rotationMatrixToQuaternion(R_world_to_end.transpose());
+//   Vector3d p_end_effector_world_linear =
+//       R_world_to_base * p_end_effector_base_linear + p_base_world_linear;
+//   Matrix3d R_world_to_end = R_world_to_base * R_base_to_end;
+//   Quat quat_world_to_end =
+//       ori::rotationMatrixToQuaternion(R_world_to_end.transpose());
 
-  // 合并pos和rpy得到完整的p_end_effector_world向量
-  p_end_effector_world.head<3>() = p_end_effector_world_linear;
-  p_end_effector_world.tail<3>() = ori::quatToRPY(quat_world_to_end);
+//   // 合并pos和rpy得到完整的p_end_effector_world向量
+//   p_end_effector_world.head<3>() = p_end_effector_world_linear;
+//   p_end_effector_world.tail<3>() = ori::quatToRPY(quat_world_to_end);
 
-  // 将末端执行器相对于基座的线速度转换到世界坐标系下
-  Vector3d v_end_effector_world_linear =
-      R_world_to_base * v_end_effector_base_linear.head<3>() +
-      v_base_world_linear;
+//   //
+//   如果末端执行器的角速度v_end_effector_base_angular是在基座坐标系下的，则在世界坐标系下的角速度应为：
+//   Vector3d v_end_effector_world_angular =
+//       R_world_to_base * v_end_effector_base_angular + v_base_world_angular;
 
-  // 角速度部分转换会更复杂一些，因为它涉及旋转向量的转动定律
-  // 如果末端执行器的角速度v_end_effector_base_angular是在基座坐标系下的，则在世界坐标系下的角速度应为：
-  Vector3d v_end_effector_world_angular =
-      R_world_to_base * v_end_effector_base_angular +
-      v_base_world_angular.cross(p_end_effector_base_linear);
+//   // 将末端执行器相对于基座的线速度转换到世界坐标系下
+//   Vector3d v_end_effector_world_linear =
+//       R_world_to_base * v_end_effector_base_linear.head<3>() +
+//       v_base_world_linear;
 
-  // 合并线速度和角速度得到完整的速度向量
-  v_end_effector_world.head<3>() = v_end_effector_world_linear;
-  v_end_effector_world.tail<3>() = v_end_effector_world_angular;
-}
+//   // 合并线速度和角速度得到完整的速度向量
+//   v_end_effector_world.head<3>() = v_end_effector_world_linear;
+//   v_end_effector_world.tail<3>() = v_end_effector_world_angular;
+// }
 
 // real value, need to transform if you use imu for rpy,
 // because pelvis is the center but imu is on torso
@@ -98,7 +97,8 @@ void H1Estm::cheater_compute_state(H1State &state, mjData *d) {
   for (int i = 0; i < 3; ++i) {
     state.euler_angle_vel(i) = d->qvel[3 + i];
   }
-  state.euler_angle_vel = state.euler_angle_vel;
+  std::cout << "state.euler_angle_vel\n"
+            << state.euler_angle_vel.transpose() << std::endl;
 
   // --- get leg_qpos and leg_qvel ---
   int leg_joint_num = 5;
@@ -136,35 +136,26 @@ void H1Estm::cheater_compute_state(H1State &state, mjData *d) {
   frame_name.push_back("right_foot_center");
   frame_name.push_back("left_hand_center");
   frame_name.push_back("right_hand_center");
+  Vector<double, 7> qbase(d->qpos[0], d->qpos[1], d->qpos[2], d->qpos[4],
+                          d->qpos[5], d->qpos[6], d->qpos[3]);
+  Vector<double, 6> qdbase(d->qvel[0], d->qvel[1], d->qvel[2], d->qvel[3],
+                           d->qvel[4], d->qvel[5]);
 
   for (int i = 0; i < 2; ++i) {
     Vector<double, 6> p_rel, dp_rel;
-    limb_kin[i].forward_kin_frame(state.leg_qpos.col(i), state.leg_qvel.col(i),
-                                  p_rel, dp_rel, frame_name[i]);
-    Vector<double, 6> p_base_world, v_base_world;
-    p_base_world.head<3>() = state.pos;
-    p_base_world.tail<3>() = state.euler_angle;
-    v_base_world.head<3>() = state.lin_vel;
-    v_base_world.tail<3>() = state.euler_angle_vel;
+    limb_kin[i].forward_kin_frame(qbase, qdbase, state.leg_qpos.col(i),
+                                  state.leg_qvel.col(i), p_rel, dp_rel,
+                                  frame_name[i]);
 
-    Vector<double, 6> p_rel_world, dp_rel_world;
-    state.foot_pos_base.col(i) = p_rel;
-    state.foot_vel_base.col(i) = dp_rel;
-    base_to_world(p_rel, dp_rel, p_rel_world, dp_rel_world, p_base_world,
-                  v_base_world);
-
-    state.foot_pos_world.col(i) = p_rel_world;
-    state.foot_vel_world.col(i) = dp_rel_world;
+    state.foot_pos_world.col(i) = p_rel;
+    state.foot_vel_world.col(i) = dp_rel;
   }
-  // std::cout << "foot_pos_base = \n"
-  //           << state.foot_pos_base.col(0).transpose() << std::endl;
   // std::cout << "foot_pos_world = \n"
   //           << state.foot_pos_world.col(0).transpose() << std::endl;
 
   // Vector<double, 5> qpos, qvel;
   // Vector<double, 6> x, dx;
   // x << 0.039468, 0.20286, -0.801049, 0, 0, 0;
-  // dx = state.foot_vel_base.col(0);
   // limb_kin[0].inverse_kin_frame(qpos, qvel, x, dx, frame_name[0],
   //                               Vector<double, 5>(0, 0, -0.4, 0.8, -0.4));
   // std::cout << "leg_qpos = \n" << state.leg_qpos.transpose() << std::endl;
@@ -175,37 +166,20 @@ void H1Estm::cheater_compute_state(H1State &state, mjData *d) {
   // --- get hand_pos, hand_vel ---
   for (int i = 0; i < 2; ++i) {
     Vector<double, 6> p_rel, dp_rel;
-    limb_kin[2 + i].forward_kin_frame(state.arm_qpos.col(i),
+    limb_kin[2 + i].forward_kin_frame(qbase, qdbase, state.arm_qpos.col(i),
                                       state.arm_qvel.col(i), p_rel, dp_rel,
                                       frame_name[2 + i]);
-    Vector<double, 6> p_base_world, v_base_world;
-    p_base_world.head<3>() = state.pos;
-    p_base_world.tail<3>() = state.euler_angle;
-    v_base_world.head<3>() = state.lin_vel;
-    v_base_world.tail<3>() = state.euler_angle_vel;
 
-    Vector<double, 6> p_rel_world, dp_rel_world;
-    state.hand_pos_base.col(i) = p_rel;
-    state.hand_vel_base.col(i) = dp_rel;
-    base_to_world(p_rel, dp_rel, p_rel_world, dp_rel_world, p_base_world,
-                  v_base_world);
-
-    state.hand_pos_world.col(i) = p_rel_world;
-    state.hand_vel_world.col(i) = dp_rel_world;
+    state.hand_pos_world.col(i) = p_rel;
+    state.hand_vel_world.col(i) = dp_rel;
   }
-  // std::cout << "hand_pos_base = \n"
-  //           << state.hand_pos_base.col(0).transpose() << std::endl;
   // std::cout << "hand_pos_world = \n"
   //           << state.hand_pos_world.col(0).transpose() << std::endl;
-  // std::cout << "hand_vel_base = \n"
-  //           << state.hand_vel_base.col(0).transpose() << std::endl;
   // std::cout << "hand_vel_world = \n"
   //           << state.hand_vel_world.col(0).transpose() << std::endl;
 
   // Vector<double, 5> qpos, qvel;
   // Vector<double, 6> x, dx;
-  // x = state.hand_pos_base.col(0);
-  // dx = state.hand_vel_base.col(0);
   // limb_kin[2].inverse_kin_frame(qpos, qvel, x, dx, frame_name[2],
   //                               Vector<double, 5>(0, 0, 0, 0, 0));
   // std::cout << "arm_qpos = \n" << state.arm_qpos.transpose() << std::endl;

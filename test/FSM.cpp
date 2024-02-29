@@ -31,12 +31,12 @@ H1FSM::H1FSM() {
 
   foot_forces_kin.setZero();
 
-  walking = new OffsetDurationGait(horizon, Vector<int, 2>(0, 0.5 * horizon),
-                                   Vector<int, 2>(0.5 * horizon, 0.5 * horizon),
-                                   "Walking");
-  standing =
-      new OffsetDurationGait(horizon, Vector<int, 2>(0, 0),
-                             Vector<int, 2>(horizon, horizon), "Standing");
+  walking = new OffsetDurationGait(
+      horizon * 1.6, Vector<int, 2>(0, 0.5 * horizon * 1.6),
+      Vector<int, 2>(0.5 * horizon * 1.6, 0.5 * horizon * 1.6), "Walking");
+  standing = new OffsetDurationGait(
+      horizon * 1.6, Vector<int, 2>(0, 0),
+      Vector<int, 2>(horizon * 1.6, horizon * 1.6), "Standing");
 
   counter = 0;
   iterationCounter = 0;
@@ -71,11 +71,11 @@ void H1FSM::main_program() {
 
     // 3种模式，站立，踏步，行走
     // 先切力控站立再运动
-    if (counter < 2000000) {
+    if (counter < 30000000) {
       // std::cout << "***************** standing *****************\n"
       //           << std::endl;
       mode = STANDING;
-    } else if (counter < 5500000) {
+    } else if (counter < 5500) {
       // std::cout << "***************** stepping *****************\n"
       //           << std::endl;
       mode = STEPPING;
@@ -173,8 +173,6 @@ void H1FSM::run(int mode) {
   // 开启或关闭wbc
   if (use_wbc) {
     wbc_update_needed = true;
-  } else {
-    compute_joint_torques();
   }
   etsm_update_needed = true;
 }
@@ -264,9 +262,8 @@ void H1FSM::updateWbcData() {
 
   Matrix3d RotMat = state_cur.rot_mat;
 
-  wbc_data.state.bodyVelocity.segment(0, 3) =
-      RotMat * state_cur.euler_angle_vel;
-  wbc_data.state.bodyVelocity.segment(3, 3) = RotMat * state_cur.lin_vel;
+  wbc_data.state.bodyVelocity.segment(0, 3) = state_cur.euler_angle_vel;
+  wbc_data.state.bodyVelocity.segment(3, 3) = state_cur.lin_vel;
 
   for (int i = 0; i < 2; ++i) {
     wbc_data.state.q.segment(i * 5, 5) = state_cur.leg_qpos.col(i);
@@ -306,15 +303,17 @@ void H1FSM::updateWbcData() {
   // std::cout << "wbc_data.pEnd_des[1]" << wbc_data.pEnd_des[1] << std::endl;
 
   // [todo]
-  state_des.hand_pos_base << 0.279, 0.279, 0.21353, -0.21353, 0.0881137,
-      0.0881137, 0, 0, 0, 0, 0, 0;
-  state_des.hand_vel_base << 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0;
-  state_des.hand_pos_world = state_des.hand_pos_base;
+  Matrix<double, 6, 2> hand_pos_base;
+  hand_pos_base << 0.279, 0.279, 0.21363, -0.21353, 0.0881137, 0.0881137, 0, 0,
+      0, 0, 0, 0;
+  Matrix<double, 6, 2> hand_vel_base;
+  hand_vel_base << 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0;
+  state_des.hand_pos_world = hand_pos_base;
   state_des.hand_pos_world.block(0, 0, 3, 1) += state_cur.pos;
   state_des.hand_pos_world.block(0, 1, 3, 1) += state_cur.pos;
   state_des.hand_pos_world.block(3, 0, 3, 1) += state_cur.euler_angle;
   state_des.hand_pos_world.block(3, 1, 3, 1) += state_cur.euler_angle;
-  state_des.hand_vel_world = state_des.hand_vel_base;
+  state_des.hand_vel_world = hand_vel_base;
   for (int i = 2; i < 4; ++i) {
     wbc_data.pEnd_des[i] = state_des.hand_pos_world.col(i - 2);
 
@@ -339,27 +338,6 @@ void H1FSM::compute_wbc() {
   updateWbcData();
   // --- solve the qp ---
   wbc_controller->run(wbc_data, state_cur.joint_torque);
-}
-
-// 算关节力矩，前馈+pd
-void H1FSM::compute_joint_torques() {
-  for (int i = 0; i < 2; ++i) {
-    std::vector<std::string> frame_name;
-    frame_name.push_back("left_foot_center");
-    frame_name.push_back("right_foot_center");
-
-    Matrix<double, 6, 5> jacobian =
-        limb_kin[i].get_limb_jacobian(state_cur.leg_qpos.col(i), frame_name[i]);
-
-    Vector<double, 6> grf_world = state_cur.grf_ref.segment(6 * i, 6);
-    // std::cout << "grf_world = \n" << grf_world.transpose() << std::endl;
-    Vector<double, 6> grf_base;
-    grf_base.head<3>() = state_cur.rot_mat * grf_world.head<3>();
-    grf_base.tail<3>() = state_cur.rot_mat * grf_world.tail<3>();
-
-    state_cur.joint_torque.segment(5 * i, 5) =
-        jacobian.transpose() * (foot_forces_kin.col(i) - grf_base);
-  }
 }
 
 // 返回joint_torque发给电机控制器
