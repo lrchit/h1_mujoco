@@ -655,4 +655,18 @@ Stephen Brawner (brawner@gmail.com)
     <parent link="right_ankle_link" />
     <child link="right_foot_center" />
   </joint>
+
+  <link name="left_hand_center"></link>
+  <joint name="left_hand_center_joint" type="fixed">
+    <origin xyz="0.2605 0 -0.0185" rpy="0 0 0" />
+    <parent link="left_elbow_link" />
+    <child link="left_hand_center" />
+  </joint>
+
+  <link name="right_hand_center"></link>
+  <joint name="right_hand_center_joint" type="fixed">
+    <origin xyz="0.2605 0 -0.0185" rpy="0 0 0" />
+    <parent link="right_elbow_link" />
+    <child link="right_hand_center" />
+  </joint>
 </robot>

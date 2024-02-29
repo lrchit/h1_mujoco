@@ -131,8 +131,8 @@ void H1Estm::cheater_compute_state(H1State &state, mjData *d) {
   std::vector<std::string> frame_name;
   frame_name.push_back("left_foot_center");
   frame_name.push_back("right_foot_center");
-  frame_name.push_back("left_elbow_link");
-  frame_name.push_back("right_elbow_link");
+  frame_name.push_back("left_hand_center");
+  frame_name.push_back("right_hand_center");
 
   for (int i = 0; i < 2; ++i) {
     Vector<double, 6> p_rel, dp_rel;

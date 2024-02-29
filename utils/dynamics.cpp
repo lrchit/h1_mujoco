@@ -57,15 +57,17 @@ void FBDynModel::_updateMBkinmatics() {
     x.segment(3, 3) = ori::quatToRPY(quat_end_to_base);
     _pGC[i] = x;
 
-    // std::cout << _vGC[i].transpose() << std::endl;
+    if (i == 3)
+      std::cout << "pGC\n" << _pGC[i].transpose() << std::endl;
   }
 
   // std::vector<std::string> frame_name;
   // frame_name.push_back("left_foot_center");
   // frame_name.push_back("right_foot_center");
   // frame_name.push_back("torso_link");
-  // frame_name.push_back("left_elbow_link");
-  // frame_name.push_back("right_elbow_link");
+  // frame_name.push_back("left_hand_center");
+  // frame_name.push_back("right_hand_center");
+  // std::cout << "sequence" << std::endl;
   // for (int i = 0; i < 5; ++i) {
   //   pinocchio::FrameIndex FRAME_ID = model.getFrameId(frame_name[i]);
   //   std::cout << FRAME_ID << std::endl;

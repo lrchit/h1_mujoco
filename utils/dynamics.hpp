@@ -74,7 +74,7 @@ protected:
   Vec25 qd;
 
   std::vector<std::string> limbs = {"left_foot_center", "right_foot_center",
-                                    "left_elbow_link", "right_elbow_link"};
+                                    "left_hand_center", "right_hand_center"};
 
   void _updateMBkinmatics();
   void _updateMBdynamics();

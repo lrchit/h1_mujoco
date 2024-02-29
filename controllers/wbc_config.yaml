@@ -44,12 +44,12 @@ kp_foot_z: 200
 kp_foot_roll: 200
 kp_foot_pitch: 200
 kp_foot_yaw: 200
-kp_hand_x: 10
-kp_hand_y: 10
-kp_hand_z: 10
-kp_hand_roll: 10
-kp_hand_pitch: 10
-kp_hand_yaw: 10
+kp_hand_x: 0
+kp_hand_y: 0
+kp_hand_z: 0
+kp_hand_roll: 0
+kp_hand_pitch: 0
+kp_hand_yaw: 0
 
 kd_foot_x: 20
 kd_foot_y: 20
@@ -57,12 +57,12 @@ kd_foot_z: 20
 kd_foot_roll: 20
 kd_foot_pitch: 20
 kd_foot_yaw: 20
-kd_hand_x: 1
-kd_hand_y: 1
-kd_hand_z: 1
-kd_hand_roll: 1
-kd_hand_pitch: 1
-kd_hand_yaw: 1
+kd_hand_x: 0
+kd_hand_y: 0
+kd_hand_z: 0
+kd_hand_roll: 0
+kd_hand_pitch: 0
+kd_hand_yaw: 0
 
 weight_floating: 10
 weight_reaction_force: 1

@@ -37,13 +37,14 @@ bool LinkPosTask::_UpdateCommand(const void *pos_des, const DVec &vel_des,
         _Kd[i] * (TK::vel_des_[i] - robot_sys_->_vGC[link_idx_][i]) +
         TK::acc_des_[i];
   }
-  if (link_idx_ == 2 || link_idx_ == 3) {
-    // std::cout << "op_cmd_\n" << op_cmd_.transpose() << std::endl;
+  if (link_idx_ == 3) {
+    std::cout << "op_cmd_\n" << op_cmd_.transpose() << std::endl;
+    std::cout << "pos_cmd\n" << pos_cmd->transpose() << std::endl;
     std::cout << "pos_err_\n" << pos_err_.transpose() << std::endl;
-    std::cout << "vel_des_\n" << vel_des_.transpose() << std::endl;
-    std::cout << "curr_vel\n"
-              << robot_sys_->_vGC[link_idx_].transpose() << std::endl;
-    std::cout << "acc_des_\n" << acc_des_.transpose() << std::endl;
+    // std::cout << "vel_des_\n" << vel_des_.transpose() << std::endl;
+    // std::cout << "curr_vel\n"
+    //           << robot_sys_->_vGC[link_idx_].transpose() << std::endl;
+    // std::cout << "acc_des_\n" << acc_des_.transpose() << std::endl;
   }
 
   // printf("[Link Pos Task]\n");
@@ -60,6 +61,7 @@ bool LinkPosTask::_UpdateCommand(const void *pos_des, const DVec &vel_des,
 
 bool LinkPosTask::_UpdateTaskJacobian() {
   TK::Jt_ = robot_sys_->_Jc[link_idx_];
+  // std::cout << "TK::Jt_\n" << TK::Jt_ << std::endl;
   if (!virtual_depend_) {
     TK::Jt_.block(0, 0, 5, 6) = DMat::Zero(5, 6);
   }

@@ -184,4 +184,10 @@ Stephen Brawner (brawner@gmail.com)
     <axis xyz="0 1 0" />
     <limit lower="-1.25" upper="2.61" effort="18" velocity="20" />
   </joint>
+  <link name="right_hand_center"></link>
+  <joint name="right_hand_center_joint" type="fixed">
+    <origin xyz="0.2605 0 -0.0185" rpy="0 0 0" />
+    <parent link="right_elbow_link" />
+    <child link="right_hand_center" />
+  </joint>
 </robot>

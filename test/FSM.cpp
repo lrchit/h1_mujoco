@@ -300,19 +300,21 @@ void H1FSM::updateWbcData() {
 
     wbc_data.Fr_des[i] = state_cur.grf_ref.segment(6 * i, 6);
   }
+  // std::cout << "wbc_data.pEnd_des[0]" << wbc_data.pEnd_des[0] << std::endl;
+  // std::cout << "wbc_data.pEnd_des[1]" << wbc_data.pEnd_des[1] << std::endl;
 
   // [todo]
-  state_des.hand_pos_base << 0.0185, 0.0185, 0.21353, -0.21353, 0.111114,
-      0.111114, 0, 0, 0, 0, 0, 0;
+  state_des.hand_pos_base << 0.279, 0.279, 0.21353, -0.21353, 0.0881137,
+      0.0881137, 0, 0, 0, 0, 0, 0;
   state_des.hand_vel_base << 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0;
   state_des.hand_pos_world = state_des.hand_pos_base;
-  state_des.hand_pos_world(4) = state_des.hand_pos_base(4) + 0.8;
-  state_des.hand_pos_world(5) = state_des.hand_pos_base(5) + 0.8;
+  state_des.hand_pos_world.block(0, 0, 3, 1) += state_cur.pos;
+  state_des.hand_pos_world.block(0, 1, 3, 1) += state_cur.pos;
   state_des.hand_vel_world = state_des.hand_vel_base;
   for (int i = 2; i < 4; ++i) {
-    wbc_data.pEnd_des[i] = state_des.hand_pos_world.col(i);
+    wbc_data.pEnd_des[i] = state_des.hand_pos_world.col(i - 2);
 
-    wbc_data.vEnd_des[i] = state_des.hand_vel_world.col(i);
+    wbc_data.vEnd_des[i] = state_des.hand_vel_world.col(i - 2);
     wbc_data.aEnd_des[i] = Vec6::Zero();
 
     if (state_cur.contact_phase(i) > 0 && state_cur.contact_phase(i) <= 1) {
@@ -322,6 +324,8 @@ void H1FSM::updateWbcData() {
 
     wbc_data.Fr_des[i] = state_cur.grf_ref.segment(6 * i, 6);
   }
+  // std::cout << "wbc_data.pEnd_des[2]" << wbc_data.pEnd_des[2] << std::endl;
+  // std::cout << "wbc_data.pEnd_des[3]" << wbc_data.pEnd_des[3] << std::endl;
 }
 
 // 求解wbc
