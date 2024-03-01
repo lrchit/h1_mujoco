@@ -96,8 +96,8 @@ void H1Mpc::update_inertia(H1State &state) {
   floating_base_state.bodyOrientation = ori::rpyToQuat(state.euler_angle);
   floating_base_state.bodyPosition = state.pos;
   Vector<double, 6> bodyVelocity;
-  bodyVelocity.head<3>() = state.lin_vel;
-  bodyVelocity.tail<3>() = state.euler_angle_vel;
+  bodyVelocity.head<3>() = state.rot_mat * state.lin_vel;
+  bodyVelocity.tail<3>() = state.rot_mat * state.euler_angle_vel;
   Vector<double, 18> q, qd;
   for (int i = 0; i < 2; ++i) {
     q.segment(5 * i, 5) = state.leg_qpos.col(i);
@@ -108,7 +108,7 @@ void H1Mpc::update_inertia(H1State &state) {
   }
 
   floating_base_dyn.updateModel(floating_base_state);
-  inertia = floating_base_dyn._A.block(0, 0, 3, 3);
+  inertia = floating_base_dyn._A.block(3, 3, 3, 3);
 }
 
 // 更新mpc参数
@@ -148,8 +148,8 @@ void H1Mpc::update_mpc(Matrix<double, 3, 2> foot_pos, VectorXd &state_des,
 
   Matrix3d rot_mat;
   rot_mat = ori::rpyToRotMat(state_cur.block(0, 0, 3, 1)).transpose();
-  Matrix3d inertia_world, inertia_world_inv;
-  inertia_world = rot_mat * inertia * rot_mat.transpose();
+  Matrix3d inertia_world_inv;
+  // inertia_world_inv = (rot_mat * inertia * rot_mat.transpose()).inverse();
   inertia_world_inv = inertia.inverse();
   Matrix3d L = Matrix3d::Identity();
   for (int i = 0; i < 2; ++i) {

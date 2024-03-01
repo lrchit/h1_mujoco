@@ -171,15 +171,15 @@ void H1Wbc::_ContactTaskUpdate(const WbcData &input_data) {
       _end_contact[limb]->UpdateContactSpec();
       _contact_list.push_back(_end_contact[limb]);
     } else { // no contact
-      // _end_task[limb]->UpdateTask(&(input_data.pEnd_des[limb]),
-      //                             input_data.vEnd_des[limb],
-      //                             input_data.aEnd_des[limb]);
-      // _task_list.push_back(_end_task[limb]);
+      _end_task[limb]->UpdateTask(&(input_data.pEnd_des[limb]),
+                                  input_data.vEnd_des[limb],
+                                  input_data.aEnd_des[limb]);
+      _task_list.push_back(_end_task[limb]);
     }
-    _end_task[limb]->UpdateTask(&(input_data.pEnd_des[limb]),
-                                input_data.vEnd_des[limb],
-                                input_data.aEnd_des[limb]);
-    _task_list.push_back(_end_task[limb]);
+    // _end_task[limb]->UpdateTask(&(input_data.pEnd_des[limb]),
+    //                             input_data.vEnd_des[limb],
+    //                             input_data.aEnd_des[limb]);
+    // _task_list.push_back(_end_task[limb]);
   }
 }
 

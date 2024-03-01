@@ -10,70 +10,54 @@ kinematics::kinematics(const std::string urdf_filename) {
 
 kinematics::~kinematics() {}
 
-void kinematics::leg_forward_kin_frame(
-    Vector<double, 7> qbase, Vector<double, 6> qdbase, Vector<double, 5> qlimb,
-    Vector<double, 5> qdlimb, Vector<double, 6> &x, Vector<double, 6> &dx,
-    std::string frame_name) {
+void kinematics::forward_kin_frame(H1State &state,
+                                   std::vector<std::string> frame_name) {
 
-  pinocchio::FrameIndex FRAME_ID = model.getFrameId(frame_name);
+  Vector<double, 25> q;
+  q.segment(0, 3) = state.pos;
+  Quat quat_eigen = ori::rpyToQuat(state.euler_angle);
+  Quat quat_pinocchio(quat_eigen[1], quat_eigen[2], quat_eigen[3],
+                      quat_eigen[0]);
+  q.segment(3, 4) = quat_pinocchio;
+  q.segment(7, 5) = state.leg_qpos.col(0);
+  q.segment(12, 5) = state.leg_qpos.col(1);
+  q.segment(17, 4) = state.arm_qpos.col(0);
+  q.segment(21, 4) = state.arm_qpos.col(1);
 
-  Vector<double, 12> q;
-  q.segment(0, 7) = qbase;
-  q.segment(7, 5) = qlimb;
-  Vector<double, 11> qd;
-  qd.segment(0, 6) = qdbase;
-  qd.segment(6, 5) = qdlimb;
+  Vector<double, 24> qd;
+  qd.segment(0, 3) = state.lin_vel;
+  qd.segment(3, 3) = state.euler_angle_vel;
+  qd.segment(6, 5) = state.leg_qvel.col(0);
+  qd.segment(11, 5) = state.leg_qvel.col(1);
+  qd.segment(16, 4) = state.arm_qvel.col(0);
+  qd.segment(20, 4) = state.arm_qvel.col(1);
+
   pinocchio::forwardKinematics(model, data, q, qd);
   pinocchio::updateFramePlacements(model, data);
 
-  // 获取末端位姿
-  const pinocchio::SE3 &end_effector_placement = data.oMf[FRAME_ID];
+  std::vector<Vector<double, 6>> x(4), xd(4);
+  for (int i = 0; i < 4; ++i) {
+    pinocchio::FrameIndex FRAME_ID = model.getFrameId(frame_name[i]);
 
-  x.segment(0, 3) = end_effector_placement.translation();
-
-  Matrix3d rot_mat_base_to_end(end_effector_placement.rotation().transpose());
-  Quat quat_base_to_end = ori::rotationMatrixToQuaternion(rot_mat_base_to_end);
-  x.segment(3, 3) = ori::quatToRPY(quat_base_to_end);
-
-  // 计算并获取末端执行器的速度向量（包含线速度和角速度）
-  dx = pinocchio::getFrameVelocity(model, data, FRAME_ID,
-                                   pinocchio::LOCAL_WORLD_ALIGNED);
-
-  // std::cout<<'\n'<<"x: "<<x.transpose()<< '\n'<<"dx "<< \
-    // dx.transpose()<<'\n'<<"dx"<<dx.transpose()<<std::endl;
-}
-
-void kinematics::arm_forward_kin_frame(
-    Vector<double, 7> qbase, Vector<double, 6> qdbase, Vector<double, 4> qlimb,
-    Vector<double, 4> qdlimb, Vector<double, 6> &x, Vector<double, 6> &dx,
-    std::string frame_name) {
-
-  pinocchio::FrameIndex FRAME_ID = model.getFrameId(frame_name);
-
-  Vector<double, 11> q;
-  q.segment(0, 7) = qbase;
-  q.segment(7, 4) = qlimb;
-  Vector<double, 10> qd;
-  qd.segment(0, 6) = qdbase;
-  qd.segment(6, 4) = qdlimb;
-  pinocchio::forwardKinematics(model, data, q, qd);
-  pinocchio::updateFramePlacements(model, data);
-
-  // 获取末端位姿
-  const pinocchio::SE3 &end_effector_placement = data.oMf[FRAME_ID];
-
-  x.segment(0, 3) = end_effector_placement.translation();
-
-  Matrix3d rot_mat_base_to_end(end_effector_placement.rotation().transpose());
-  Quat quat_base_to_end = ori::rotationMatrixToQuaternion(rot_mat_base_to_end);
-  x.segment(3, 3) = ori::quatToRPY(quat_base_to_end);
-
-  // 计算并获取末端执行器的速度向量（包含线速度和角速度）
-  dx = pinocchio::getFrameVelocity(model, data, FRAME_ID,
-                                   pinocchio::LOCAL_WORLD_ALIGNED);
-
-  // std::cout<<'\n'<<"x: "<<x.transpose()<< '\n'<<"dx "<< \
-    // dx.transpose()<<'\n'<<"dx"<<dx.transpose()<<std::endl;
+    // 获取末端位姿
+    const pinocchio::SE3 &end_effector_placement = data.oMf[FRAME_ID];
+    x[i].segment(0, 3) = end_effector_placement.translation();
+    Matrix3d rot_mat_base_to_end(end_effector_placement.rotation().transpose());
+    Quat quat_base_to_end =
+        ori::rotationMatrixToQuaternion(rot_mat_base_to_end);
+    x[i].segment(3, 3) = ori::quatToRPY(quat_base_to_end);
+    // 计算并获取末端执行器的速度向量（包含线速度和角速度）
+    xd[i] = pinocchio::getFrameVelocity(model, data, FRAME_ID,
+                                        pinocchio::LOCAL_WORLD_ALIGNED);
+  }
+  state.foot_pos_world.col(0) = x[0];
+  state.foot_pos_world.col(1) = x[1];
+  state.hand_pos_world.col(0) = x[2];
+  state.hand_pos_world.col(1) = x[3];
+  state.foot_vel_world.col(0) = xd[0];
+  state.foot_vel_world.col(1) = xd[1];
+  state.hand_vel_world.col(0) = xd[2];
+  state.hand_vel_world.col(1) = xd[3];
 }
 
 // void kinematics::inverse_kin_frame(Vector<double, 5> &q, Vector<double, 5>

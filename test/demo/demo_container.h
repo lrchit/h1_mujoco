@@ -2,7 +2,6 @@
 #pragma once
 
 #include "cppTypes.h"
-#include "kinematics.h"
 #include "mpc_caller.h"
 #include "state.h"
 #include <Eigen/Eigen>
@@ -14,7 +13,7 @@
 
 class H1Demo {
 public:
-  H1Demo(std::vector<kinematics> _limb_kin);
+  H1Demo();
   ~H1Demo(){};
 
   // demo
@@ -33,8 +32,6 @@ public:
                     double &_swing_height, double body_height_motion);
 
 private:
-  std::vector<kinematics> limb_kin;
-
   double body_height_stand;
 
   double swing_height_walking;

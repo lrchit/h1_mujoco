@@ -15,7 +15,7 @@ using namespace Eigen;
 
 class H1Estm {
 public:
-  H1Estm(std::vector<kinematics> _limb_kin);
+  H1Estm(kinematics *_limb_kin);
 
   void call_state_estimator(H1State &state, mjData *d);
 
@@ -34,6 +34,6 @@ private:
 
   double dt;
 
-  std::vector<kinematics> limb_kin;
+  kinematics *limb_kin;
 };
 #endif

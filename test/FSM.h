@@ -28,7 +28,6 @@ public:
   bool mpc_update_needed;
   bool wbc_update_needed;
 
-  H1Demo *demo;
   H1State state_cur, state_des;
 
 private:
@@ -40,10 +39,11 @@ private:
   // 模块：状态估计，mpc，wbc，demo
   H1Estm *estimater;
   H1Wbc *wbc_controller;
+  H1Demo *demo;
   MotionPlanning *motion_planning;
   H1Mpc *mpc_solver;
 
-  std::vector<kinematics> limb_kin;
+  kinematics *limb_kin;
   WbcData wbc_data;
 
   Matrix<double, 6, 2> foot_forces_kin;

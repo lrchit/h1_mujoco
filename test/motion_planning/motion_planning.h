@@ -3,7 +3,6 @@
 
 #include "Gait.h"
 #include "foot_swing_traj.h"
-#include "kinematics.h"
 #include "orientation_tools.h"
 #include "state.h"
 #include <yaml-cpp/yaml.h>
@@ -12,7 +11,7 @@ using namespace Eigen;
 
 class MotionPlanning {
 public:
-  MotionPlanning(std::vector<kinematics> _limb_kin);
+  MotionPlanning();
   ~MotionPlanning(){};
 
   void generate_swing_ctrl(bool use_wbc, Gait *gait, const H1State &state_cur,
@@ -44,6 +43,4 @@ private:
   Matrix<double, 2, 1> swing_state;
   Matrix<double, 6, 2> foot_hold;
   foot_swing_traj footSwingTrajectories[2];
-
-  std::vector<kinematics> limb_kin;
 };

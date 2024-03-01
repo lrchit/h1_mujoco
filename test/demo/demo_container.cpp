@@ -1,14 +1,12 @@
 
 #include "demo_container.h"
 
-H1Demo::H1Demo(std::vector<kinematics> _limb_kin) {
+H1Demo::H1Demo() {
   YAML::Node config = YAML::LoadFile("../controllers/mpc_config.yaml");
 
   body_height_stand = config["body_height_stand"].as<double>();
 
   swing_height_walking = config["swing_height_walking"].as<double>();
-
-  limb_kin = _limb_kin;
 }
 
 // 力控站立，踏步，行走动作

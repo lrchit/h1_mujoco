@@ -18,10 +18,7 @@ H1FSM::H1FSM() {
   use_wbc = config["use_wbc"].as<bool>();
 
   // limb_kin.resize(4);
-  limb_kin.push_back(kinematics("../h1_description/urdf/h1_left_leg.urdf"));
-  limb_kin.push_back(kinematics("../h1_description/urdf/h1_right_leg.urdf"));
-  limb_kin.push_back(kinematics("../h1_description/urdf/h1_left_arm.urdf"));
-  limb_kin.push_back(kinematics("../h1_description/urdf/h1_right_arm.urdf"));
+  limb_kin = new kinematics("../h1_description/urdf/h1.urdf");
 
   body_height_stand = config["body_height_stand"].as<double>();
   body_height_motion = config["body_height_motion"].as<double>();
@@ -45,9 +42,9 @@ H1FSM::H1FSM() {
   wbc_update_needed = false;
 
   estimater = new H1Estm(limb_kin);
-  demo = new H1Demo(limb_kin);
+  demo = new H1Demo();
   wbc_controller = new H1Wbc();
-  motion_planning = new MotionPlanning(limb_kin);
+  motion_planning = new MotionPlanning();
   mpc_solver = new H1Mpc(horizon);
 }
 
@@ -218,7 +215,7 @@ void H1FSM::updateMpcData() {
         state_cur.foot_pos_world.block(0, i, 3, 1) - state_cur.pos;
 
   // --- update mpc solver ---
-  // mpc_solver->update_inertia(state_cur);
+  mpc_solver->update_inertia(state_cur);
   mpc_solver->update_mpc(r_foot_to_com, state_des_vec, state_cur_vec,
                          gait_table, x_drag, dtmpc);
 
@@ -261,10 +258,9 @@ void H1FSM::updateWbcData() {
 
   Matrix3d RotMat = state_cur.rot_mat;
 
-  wbc_data.state.bodyVelocity.segment(0, 3) =
-      state_cur.rot_mat * state_cur.lin_vel;
+  wbc_data.state.bodyVelocity.segment(0, 3) = RotMat * state_cur.lin_vel;
   wbc_data.state.bodyVelocity.segment(3, 3) =
-      state_cur.rot_mat * state_cur.euler_angle_vel;
+      RotMat * state_cur.euler_angle_vel;
 
   for (int i = 0; i < 2; ++i) {
     wbc_data.state.q.segment(i * 5, 5) = state_cur.leg_qpos.col(i);
@@ -297,6 +293,7 @@ void H1FSM::updateWbcData() {
       wbc_data.contact_state[i] = 0;
 
     wbc_data.Fr_des[i] = state_cur.grf_ref.segment(6 * i, 6);
+    // wbc_data.Fr_des[i] = Vector<double, 6>::Zero();
   }
   // std::cout << "wbc_data.pEnd_des[0]" << wbc_data.pEnd_des[0] << std::endl;
   // std::cout << "wbc_data.pEnd_des[1]" << wbc_data.pEnd_des[1] << std::endl;

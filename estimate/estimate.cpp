@@ -2,7 +2,7 @@
 #include <chrono>
 #include <iostream>
 
-H1Estm::H1Estm(std::vector<kinematics> _limb_kin) {
+H1Estm::H1Estm(kinematics *_limb_kin) {
   YAML::Node config = YAML::LoadFile("../estimate/esti_config.yaml");
   dt = 0.001;
   cheater_mode = config["cheater_mode"].as<bool>();
@@ -155,57 +155,19 @@ void H1Estm::cheater_compute_state(H1State &state, mjData *d) {
   frame_name.push_back("right_foot_center");
   frame_name.push_back("left_hand_center");
   frame_name.push_back("right_hand_center");
-  Vector<double, 7> qbase(d->qpos[0], d->qpos[1], d->qpos[2], d->qpos[4],
-                          d->qpos[5], d->qpos[6], d->qpos[3]);
-  Vector<double, 6> qdbase(d->qvel[0], d->qvel[1], d->qvel[2],
-                           state.euler_angle_vel(0), state.euler_angle_vel(1),
-                           state.euler_angle_vel(2));
 
-  for (int i = 0; i < 2; ++i) {
-    Vector<double, 6> p_rel, dp_rel;
-    limb_kin[i].leg_forward_kin_frame(qbase, qdbase, state.leg_qpos.col(i),
-                                      state.leg_qvel.col(i), p_rel, dp_rel,
-                                      frame_name[i]);
+  limb_kin->forward_kin_frame(state, frame_name);
 
-    state.foot_pos_world.col(i) = p_rel;
-    state.foot_vel_world.col(i) = dp_rel;
-  }
-  // std::cout << "foot_pos_world = \n"
-  //           << state.foot_pos_world.col(0).transpose() << std::endl;
-
-  // Vector<double, 5> qpos, qvel;
-  // Vector<double, 6> x, dx;
-  // x << 0.039468, 0.20286, -0.801049, 0, 0, 0;
-  // limb_kin[0].inverse_kin_frame(qpos, qvel, x, dx, frame_name[0],
-  //                               Vector<double, 5>(0, 0, -0.4, 0.8, -0.4));
-  // std::cout << "leg_qpos = \n" << state.leg_qpos.transpose() << std::endl;
-  // std::cout << "inverse q = \n" << qpos.transpose() << std::endl;
-  // std::cout << "leg_qvel = \n" << state.leg_qvel.transpose() << std::endl;
-  // std::cout << "inverse qvel = \n" << qvel.transpose() << std::endl;
-
-  // --- get hand_pos, hand_vel ---
-  for (int i = 0; i < 2; ++i) {
-    Vector<double, 6> p_rel, dp_rel;
-    limb_kin[2 + i].arm_forward_kin_frame(qbase, qdbase, state.arm_qpos.col(i),
-                                          state.arm_qvel.col(i), p_rel, dp_rel,
-                                          frame_name[2 + i]);
-
-    state.hand_pos_world.col(i) = p_rel;
-    state.hand_vel_world.col(i) = dp_rel;
-  }
-  // std::cout << "hand_pos_world = \n"
-  //           << state.hand_pos_world.col(0).transpose() << std::endl;
-  // std::cout << "hand_vel_world = \n"
-  //           << state.hand_vel_world.col(0).transpose() << std::endl;
-
-  // Vector<double, 5> qpos, qvel;
-  // Vector<double, 6> x, dx;
-  // limb_kin[2].inverse_kin_frame(qpos, qvel, x, dx, frame_name[2],
-  //                               Vector<double, 5>(0, 0, 0, 0, 0));
-  // std::cout << "arm_qpos = \n" << state.arm_qpos.transpose() << std::endl;
-  // std::cout << "inverse q = \n" << qpos.transpose() << std::endl;
-  // std::cout << "arm_qvel = \n" << state.arm_qvel.transpose() << std::endl;
-  // std::cout << "inverse qvel = \n" << qvel.transpose() << std::endl;
+  // std::cout << '\n' << "x: " << state.pos.transpose() << std::endl;
+  // std::cout << '\n' << "x: " << state.euler_angle.transpose() << std::endl;
+  // std::cout << '\n'
+  //           << "x: " << state.foot_pos_world.col(0).transpose() << std::endl;
+  // std::cout << '\n'
+  //           << "x: " << state.foot_pos_world.col(1).transpose() << std::endl;
+  // std::cout << '\n'
+  //           << "x: " << state.hand_pos_world.col(0).transpose() << std::endl;
+  // std::cout << '\n'
+  //           << "x: " << state.hand_pos_world.col(1).transpose() << std::endl;
 }
 
 void H1Estm::call_state_estimator(H1State &state, mjData *d) {

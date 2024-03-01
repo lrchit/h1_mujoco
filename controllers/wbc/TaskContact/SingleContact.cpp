@@ -3,8 +3,8 @@
 
 // [ Fx, Fy, Fz, T_x, Ty, Tz ]
 SingleContact::SingleContact(const FBDynModel *robot, int pt)
-    : ContactSpec(6), _max_Tx(0), _max_Ty(200.), _max_Tz(200.), _max_Fz(1000.),
-      _contact_pt(pt), _dim_U(8) {
+    : ContactSpec(6), _max_Tx(200), _max_Ty(200.), _max_Tz(200.),
+      _max_Fz(1000.), _contact_pt(pt), _dim_U(8) {
   Contact::idx_Fz_ = 2;
   robot_sys_ = robot;
   Contact::Jc_ = DMat(Contact::dim_contact_, 24); // configure space dim

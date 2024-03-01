@@ -6,8 +6,7 @@
 /**
  * @brief 初始化
  */
-MotionPlanning::MotionPlanning(std::vector<kinematics> _limb_kin) {
-  limb_kin = _limb_kin;
+MotionPlanning::MotionPlanning() {
 
   YAML::Node config = YAML::LoadFile("../controllers/mpc_config.yaml");
 
@@ -38,6 +37,7 @@ MotionPlanning::MotionPlanning(std::vector<kinematics> _limb_kin) {
 
   foot_hold.setZero();
   swing_state.setZero();
+  xyz_vel_des.setZero();
 }
 
 // imu得到的rpy是(-pi，pi)，state_des.euler_angle也需要控制在这范围内
@@ -222,7 +222,6 @@ void MotionPlanning::update_command(Vector3d lin_vel_cmd,
       xyz_vel_des(i) =
           lin_vel_cmd(i) * filter_dec + (1 - filter_dec) * xyz_vel_des(i);
   }
-
   state_des.lin_vel =
       omniMode ? xyz_vel_des : state_cur.rot_mat.transpose() * xyz_vel_des;
 
