@@ -40,14 +40,15 @@ bool BodyOriTask::_UpdateCommand(const void *pos_des, const DVec &vel_des,
   }
   Vec3 ori_err_so3;
   ori::quaternionToso3(ori_err, ori_err_so3);
-  SVec curr_vel =
-      _robot_sys->_state
-          .bodyVelocity; //_state.bodyVelocity是body系的需要转为global
+
+  Mat3 Rot = ori::quaternionToRotationMatrix(link_ori);
+  SVec curr_vel = _robot_sys->_state.bodyVelocity;
+  curr_vel.head(3) =
+      Rot.transpose() *
+      curr_vel.head(3); //_state.bodyVelocity是body系的需要转为global
 
   // Configuration space: Local
   // Operational Space: Global
-  Mat3 Rot = ori::quaternionToRotationMatrix(link_ori);
-  Vec3 vel_err = Rot.transpose() * (TK::vel_des_ - curr_vel.head(3));
 
   // Rx, Ry, Rz
   for (int i(0); i < 3; ++i) {
@@ -55,8 +56,8 @@ bool BodyOriTask::_UpdateCommand(const void *pos_des, const DVec &vel_des,
     TK::vel_des_[i] = vel_des[i];
     TK::acc_des_[i] = acc_des[i];
 
-    TK::op_cmd_[i] =
-        _Kp[i] * ori_err_so3[i] + _Kd[i] * vel_err[i] + TK::acc_des_[i];
+    TK::op_cmd_[i] = _Kp[i] * ori_err_so3[i] +
+                     _Kd[i] * (TK::vel_des_[i] - curr_vel[i]) + TK::acc_des_[i];
   }
   return true;
 }

@@ -245,8 +245,9 @@ void H1FSM::compute_mpc() {
 }
 
 // 更新wbc需要的参数
-// Not sure if wbc_data.vBodyOri_des is state_des.omega
-// Not sure if anguler vel in general velocity is omega
+// Not sure if wbc_data.vBodyOri_des is omegaWorld or omegaBody
+// Not sure if anguler vel in general velocity is omegaWorld or
+// euler_angle_vel
 void H1FSM::updateWbcData() {
   wbc_data.contact_state.resize(4);
   wbc_data.pEnd_des.resize(4);
