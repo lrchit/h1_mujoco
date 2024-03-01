@@ -245,6 +245,8 @@ void H1FSM::compute_mpc() {
 }
 
 // 更新wbc需要的参数
+// Not sure if wbc_data.vBodyOri_des is state_des.omega
+// Not sure if anguler vel in general velocity is omega
 void H1FSM::updateWbcData() {
   wbc_data.contact_state.resize(4);
   wbc_data.pEnd_des.resize(4);
@@ -259,8 +261,7 @@ void H1FSM::updateWbcData() {
   Matrix3d RotMat = state_cur.rot_mat;
 
   wbc_data.state.bodyVelocity.segment(0, 3) = RotMat * state_cur.lin_vel;
-  wbc_data.state.bodyVelocity.segment(3, 3) =
-      RotMat * state_cur.euler_angle_vel;
+  wbc_data.state.bodyVelocity.segment(3, 3) = RotMat * state_cur.omega;
 
   for (int i = 0; i < 2; ++i) {
     wbc_data.state.q.segment(i * 5, 5) = state_cur.leg_qpos.col(i);

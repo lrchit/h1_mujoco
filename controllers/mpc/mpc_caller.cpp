@@ -97,14 +97,14 @@ void H1Mpc::update_inertia(H1State &state) {
   floating_base_state.bodyPosition = state.pos;
   Vector<double, 6> bodyVelocity;
   bodyVelocity.head<3>() = state.rot_mat * state.lin_vel;
-  bodyVelocity.tail<3>() = state.rot_mat * state.euler_angle_vel;
+  bodyVelocity.tail<3>() = state.rot_mat * state.omega;
   Vector<double, 18> q, qd;
   for (int i = 0; i < 2; ++i) {
     q.segment(5 * i, 5) = state.leg_qpos.col(i);
     qd.segment(5 * i, 5) = state.leg_qvel.col(i);
 
-    q.segment(11 + 4 * i, 4) = state.arm_qpos.block(1, i, 4, 1);
-    qd.segment(11 + 4 * i, 4) = state.arm_qvel.block(1, i, 4, 1);
+    q.segment(10 + 4 * i, 4) = state.arm_qpos.col(i);
+    qd.segment(10 + 4 * i, 4) = state.arm_qvel.col(i);
   }
 
   floating_base_dyn.updateModel(floating_base_state);

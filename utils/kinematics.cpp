@@ -25,8 +25,8 @@ void kinematics::forward_kin_frame(H1State &state,
   q.segment(21, 4) = state.arm_qpos.col(1);
 
   Vector<double, 24> qd;
-  qd.segment(0, 3) = state.lin_vel;
-  qd.segment(3, 3) = state.euler_angle_vel;
+  qd.segment(0, 3) = state.rot_mat * state.lin_vel;
+  qd.segment(3, 3) = state.rot_mat * state.omega;
   qd.segment(6, 5) = state.leg_qvel.col(0);
   qd.segment(11, 5) = state.leg_qvel.col(1);
   qd.segment(16, 4) = state.arm_qvel.col(0);
