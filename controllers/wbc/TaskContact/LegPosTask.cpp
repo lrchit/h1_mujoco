@@ -1,13 +1,13 @@
 
-#include "LinkPosTask.hpp"
+#include "LegPosTask.hpp"
 #include <orientation_tools.h>
 
 // (X, Y, Z, Roll, Pitch, Yaw)
-LinkPosTask::LinkPosTask(const FBDynModel *robot, int link_idx,
-                         bool virtual_depend)
+LegPosTask::LegPosTask(const FBDynModel *robot, int link_idx,
+                       bool virtual_depend)
     : Task(6), robot_sys_(robot), link_idx_(link_idx),
       virtual_depend_(virtual_depend) {
-  TK::Jt_ = DMat::Zero(TK::dim_task_, 25); // configure space dim
+  TK::Jt_ = DMat::Zero(TK::dim_task_, 24); // configure space dim
   TK::JtDotQdot_ = DVec::Zero(TK::dim_task_);
 
   _Kp = DVec::Constant(TK::dim_task_, 100.);
@@ -15,10 +15,10 @@ LinkPosTask::LinkPosTask(const FBDynModel *robot, int link_idx,
   _Kp_kin = DVec::Constant(TK::dim_task_, 1.);
 }
 
-LinkPosTask::~LinkPosTask() {}
+LegPosTask::~LegPosTask() {}
 
-bool LinkPosTask::_UpdateCommand(const void *pos_des, const DVec &vel_des,
-                                 const DVec &acc_des) {
+bool LegPosTask::_UpdateCommand(const void *pos_des, const DVec &vel_des,
+                                const DVec &acc_des) {
   // Vec3 pos_cmd = ((Vec6 *)pos_des)->segment(0, 3);
   // Vec3 link_pos(robot_sys_->_pGC[link_idx_].segment(0, 3));
 
@@ -107,7 +107,7 @@ bool LinkPosTask::_UpdateCommand(const void *pos_des, const DVec &vel_des,
   return true;
 }
 
-bool LinkPosTask::_UpdateTaskJacobian() {
+bool LegPosTask::_UpdateTaskJacobian() {
   TK::Jt_ = robot_sys_->_Jc[link_idx_];
   // std::cout << "TK::Jt_\n" << TK::Jt_ << std::endl;
   if (!virtual_depend_) {
@@ -116,7 +116,7 @@ bool LinkPosTask::_UpdateTaskJacobian() {
   return true;
 }
 
-bool LinkPosTask::_UpdateTaskJDotQdot() {
+bool LegPosTask::_UpdateTaskJDotQdot() {
   TK::JtDotQdot_ = robot_sys_->_Jcdqd[link_idx_];
   return true;
 }

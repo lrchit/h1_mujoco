@@ -349,12 +349,11 @@ Stephen Brawner (brawner@gmail.com)
       </geometry>
     </collision>
   </link>
-  <joint name="torso_joint" type="revolute">
+  <joint name="torso_joint" type="fixed">
     <origin xyz="0 0 0" rpy="0 0 0" />
     <parent link="pelvis" />
     <child link="torso_link" />
     <axis xyz="0 0 1" />
-    <limit lower="-2.35" upper="2.35" effort="200" velocity="23" />
   </joint>
   <link name="left_shoulder_pitch_link">
     <inertial>

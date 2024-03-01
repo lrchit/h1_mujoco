@@ -25,10 +25,14 @@ public:
   ~kinematics();
 
   // forward kin
-  void forward_kin_frame(Vector<double, 7> qbase, Vector<double, 6> qdbase,
-                         Vector<double, 5> qlimb, Vector<double, 5> qdlimb,
-                         Vector<double, 6> &x, Vector<double, 6> &dx,
-                         std::string frame_name);
+  void leg_forward_kin_frame(Vector<double, 7> qbase, Vector<double, 6> qdbase,
+                             Vector<double, 5> qlimb, Vector<double, 5> qdlimb,
+                             Vector<double, 6> &x, Vector<double, 6> &dx,
+                             std::string frame_name);
+  void arm_forward_kin_frame(Vector<double, 7> qbase, Vector<double, 6> qdbase,
+                             Vector<double, 4> qlimb, Vector<double, 4> qdlimb,
+                             Vector<double, 6> &x, Vector<double, 6> &dx,
+                             std::string frame_name);
 
   // inverse_kin
   void inverse_kin_frame(Vector<double, 5> &q, Vector<double, 5> &dq,

@@ -1,5 +1,4 @@
 <mujoco model="Unitree H1">
-  <!-- <include file="h1.xml" /> -->
   <!-- <include file="h1_arm_fixed.xml" /> -->
   <!-- <include file="h1_leg_fixed.xml" /> -->
   <include file="h1_torso_fixed.xml" />

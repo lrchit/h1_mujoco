@@ -20,12 +20,12 @@
 using namespace Eigen;
 
 struct FBModelState {
-  Quat bodyOrientation; // world frame [wxyz]
   Vec3 bodyPosition;    // world frame
-  SVec bodyVelocity;    // local frame [ang_vel, lin_vel]
-  Vec19 q;              // q here is 19 dof and the order should be "left_leg",
-                        // "torso_joint","right_leg", "left_arm", "right_arm"
-  Vec19 qd;             // here is 19 dof
+  Quat bodyOrientation; // world frame [wxyz]
+  SVec bodyVelocity;    // local frame [lin_vel, ang_vel]
+  Vec18 q;              // q here is 18 dof and the order should be "left_leg",
+                        // "right_leg", "left_arm", "right_arm"
+  Vec18 qd;             // here is 18 dof
 };
 
 class FBDynModel {
@@ -47,7 +47,7 @@ public:
 
   ~FBDynModel() {}
 
-  std::vector<Matrix<double, 6, 25>>
+  std::vector<Matrix<double, 6, 24>>
       _Jc;                   // contact jacobian list (limb point jacobian)
   Matrix<double, 6, 5> _Jcd; // contact jacobian time derivation
   std::vector<Vec6> _Jcdqd;
@@ -67,11 +67,11 @@ public:
   void updateModel(const FBModelState &state);
 
 protected:
-  Vec26
+  Vec25
       q; // first 7 [global_base_position, global_base_quaternion] in pinocchio
-  Vec25 v; // first 6 [local_base_velocity_linear, local_base_velocity_angular]
+  Vec24 v; // first 6 [local_base_velocity_linear, local_base_velocity_angular]
            // in pinocchio
-  Vec25 qd;
+  Vec24 qd;
 
   std::vector<std::string> limbs = {"left_foot_center", "right_foot_center",
                                     "left_hand_center", "right_hand_center"};

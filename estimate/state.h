@@ -7,6 +7,7 @@ struct H1State {
     euler_angle.setZero();
     pos.setZero();
     euler_angle_vel.setZero();
+    omega.setZero();
     lin_vel.setZero();
     lin_acc.setZero();
     rot_mat.setZero();
@@ -21,9 +22,6 @@ struct H1State {
     arm_qpos.setZero();
     arm_qvel.setZero();
 
-    torso_qpos = 0;
-    torso_qvel = 0;
-
     contact_phase.setZero();
     grf_ref.setZero();
     joint_torque.setZero();
@@ -32,6 +30,7 @@ struct H1State {
   Eigen::Vector3d euler_angle;
   Eigen::Vector3d pos;
   Eigen::Vector3d euler_angle_vel;
+  Eigen::Vector3d omega;
   Eigen::Vector3d lin_vel;
   Eigen::Vector3d lin_acc;
   Eigen::Matrix3d rot_mat;
@@ -43,15 +42,11 @@ struct H1State {
 
   Eigen::Matrix<double, 5, 2> leg_qpos;
   Eigen::Matrix<double, 5, 2> leg_qvel;
-  // for convenience, the 1st one is torso_qpos
-  Eigen::Matrix<double, 5, 2> arm_qpos;
-  Eigen::Matrix<double, 5, 2> arm_qvel;
-
-  double torso_qpos;
-  double torso_qvel;
+  Eigen::Matrix<double, 4, 2> arm_qpos;
+  Eigen::Matrix<double, 4, 2> arm_qvel;
 
   Eigen::Matrix<double, 4, 1> contact_phase;
 
   Eigen::Matrix<double, 24, 1> grf_ref;
-  Eigen::Matrix<double, 19, 1> joint_torque;
+  Eigen::Matrix<double, 18, 1> joint_torque;
 };

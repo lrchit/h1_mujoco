@@ -98,7 +98,7 @@ void H1Mpc::update_inertia(H1State &state) {
   Vector<double, 6> bodyVelocity;
   bodyVelocity.head<3>() = state.lin_vel;
   bodyVelocity.tail<3>() = state.euler_angle_vel;
-  Vector<double, 19> q, qd;
+  Vector<double, 18> q, qd;
   for (int i = 0; i < 2; ++i) {
     q.segment(5 * i, 5) = state.leg_qpos.col(i);
     qd.segment(5 * i, 5) = state.leg_qvel.col(i);
@@ -106,8 +106,6 @@ void H1Mpc::update_inertia(H1State &state) {
     q.segment(11 + 4 * i, 4) = state.arm_qpos.block(1, i, 4, 1);
     qd.segment(11 + 4 * i, 4) = state.arm_qvel.block(1, i, 4, 1);
   }
-  q(10) = state.torso_qpos;
-  qd(10) = state.torso_qvel;
 
   floating_base_dyn.updateModel(floating_base_state);
   inertia = floating_base_dyn._A.block(0, 0, 3, 3);
@@ -131,17 +129,17 @@ void H1Mpc::update_mpc(Matrix<double, 3, 2> foot_pos, VectorXd &state_des,
   Matrix3d trans_mat;
   double cos_yaw = cos(state_cur(2));
   double sin_yaw = sin(state_cur(2));
-  trans_mat << cos_yaw, sin_yaw, 0, -sin_yaw, cos_yaw, 0, 0, 0, 1;
+  // trans_mat << cos_yaw, sin_yaw, 0, -sin_yaw, cos_yaw, 0, 0, 0, 1;
 
-  // trans_mat(0, 0) = cos(state_cur(2)) / cos(state_cur(1));
-  // trans_mat(0, 1) = sin(state_cur(2)) / cos(state_cur(1));
-  // trans_mat(0, 2) = 0;
-  // trans_mat(1, 0) = -sin(state_cur(2));
-  // trans_mat(1, 1) = cos(state_cur(2));
-  // trans_mat(1, 2) = 0;
-  // trans_mat(2, 0) = cos(state_cur(2)) * tan(state_cur(1));
-  // trans_mat(2, 1) = sin(state_cur(2)) * tan(state_cur(1));
-  // trans_mat(2, 2) = 1;
+  trans_mat(0, 0) = cos(state_cur(2)) / cos(state_cur(1));
+  trans_mat(0, 1) = sin(state_cur(2)) / cos(state_cur(1));
+  trans_mat(0, 2) = 0;
+  trans_mat(1, 0) = -sin(state_cur(2));
+  trans_mat(1, 1) = cos(state_cur(2));
+  trans_mat(1, 2) = 0;
+  trans_mat(2, 0) = cos(state_cur(2)) * tan(state_cur(1));
+  trans_mat(2, 1) = sin(state_cur(2)) * tan(state_cur(1));
+  trans_mat(2, 2) = 1;
 
   A_mat_c.block(0, 6, 3, 3) = trans_mat;
   A_mat_c.block(3, 9, 3, 3) = Matrix3d::Identity();

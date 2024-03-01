@@ -5,16 +5,16 @@
 #include <yaml-cpp/yaml.h>
 
 H1Wbc::H1Wbc()
-    : _full_config(25), // [error]?plus 7?
-      _tau_ff(19), _des_jpos(19), _des_jvel(19)
+    : _full_config(24), // [error]?plus 7?
+      _tau_ff(18), _des_jpos(18), _des_jvel(18)
 // _model(urdf_filename)
 {
   _iter = 0;
   _full_config.setZero();
 
-  _kin_wbc = new KinWBC(25);
+  _kin_wbc = new KinWBC(24);
 
-  _dyn_wbc = new DynWbc(25, &(_contact_list), &(_task_list));
+  _dyn_wbc = new DynWbc(24, &(_contact_list), &(_task_list));
   _dyn_wbc_data = new DynWbcExtraData();
 
   _body_ori_task = new BodyOriTask(&(_model));
@@ -25,10 +25,10 @@ H1Wbc::H1Wbc()
   _end_contact[2] = new SingleContact(&(_model), 2);
   _end_contact[3] = new SingleContact(&(_model), 3);
 
-  _end_task[0] = new LinkPosTask(&(_model), 0);
-  _end_task[1] = new LinkPosTask(&(_model), 1);
-  _end_task[2] = new LinkPosTask(&(_model), 2);
-  _end_task[3] = new LinkPosTask(&(_model), 3);
+  _end_task[0] = new LegPosTask(&(_model), 0);
+  _end_task[1] = new LegPosTask(&(_model), 1);
+  _end_task[2] = new ArmPosTask(&(_model), 2);
+  _end_task[3] = new ArmPosTask(&(_model), 3);
 
   _Kp_joint.resize(10);
   _Kd_joint.resize(10);
@@ -55,7 +55,7 @@ H1Wbc::~H1Wbc() {
   _contact_list.clear();
 }
 
-void H1Wbc::run(const WbcData &input_data, Vec19 &joint_tau) {
+void H1Wbc::run(const WbcData &input_data, Vec18 &joint_tau) {
   ++_iter;
 
   _UpdateModel(input_data);
@@ -64,7 +64,7 @@ void H1Wbc::run(const WbcData &input_data, Vec19 &joint_tau) {
 
   _ComputeWBC();
 
-  Vec19 joint_torques_temp;
+  Vec18 joint_torques_temp;
 
   _UpdateLimbCMD(joint_torques_temp, input_data);
 
@@ -74,10 +74,9 @@ void H1Wbc::run(const WbcData &input_data, Vec19 &joint_tau) {
   for (int leg = 0; leg < 2; leg++) {
     joint_tau.segment(5 * leg, 5) = joint_torques_temp.segment(5 * leg, 5);
   }
-  joint_tau(10) = joint_torques_temp(10);
   for (int arm = 0; arm < 2; arm++) {
-    joint_tau.segment(4 * arm + 11, 4) =
-        joint_torques_temp.segment(4 * arm + 11, 4);
+    joint_tau.segment(4 * arm + 10, 4) =
+        joint_torques_temp.segment(4 * arm + 10, 4);
   }
 }
 
@@ -92,7 +91,7 @@ void H1Wbc::_UpdateModel(const WbcData &input_data) {
   // std::cout << _grav.transpose() <<std::endl;
 }
 
-void H1Wbc::_UpdateLimbCMD(Vec19 &joint_tau, const WbcData &input_data) {
+void H1Wbc::_UpdateLimbCMD(Vec18 &joint_tau, const WbcData &input_data) {
   //[todo] the order of q qv
   //更新要发给腿部的指令 that is tau_ff + pd
   // now the joint tau is listed as the order of q in Mqdd+Cq+g = St + JF
@@ -108,19 +107,15 @@ void H1Wbc::_UpdateLimbCMD(Vec19 &joint_tau, const WbcData &input_data) {
                                 _Kd_joint[jt] * err_jvel;
     }
   }
-  err_jpos = _des_jpos(10) - input_data.state.q(10);
-  err_jvel = _des_jvel(10) - input_data.state.qd(10);
-  joint_tau(10) =
-      _tau_ff(10) + _Kp_joint[6] * err_jpos + _Kd_joint[6] * err_jvel;
   for (int arm = 0; arm < 2; arm++) {
     for (int jt = 0; jt < 4; jt++) {
       err_jpos =
-          _des_jpos(4 * arm + jt + 11) - input_data.state.q(4 * arm + jt + 11);
+          _des_jpos(4 * arm + jt + 10) - input_data.state.q(4 * arm + jt + 10);
       err_jvel =
-          _des_jvel(4 * arm + jt + 11) - input_data.state.qd(4 * arm + jt + 11);
-      joint_tau(4 * arm + jt + 11) = _tau_ff(4 * arm + jt + 11) +
-                                     _Kp_joint[jt + 7] * err_jpos +
-                                     _Kd_joint[jt + 7] * err_jvel;
+          _des_jvel(4 * arm + jt + 10) - input_data.state.qd(4 * arm + jt + 10);
+      joint_tau(4 * arm + jt + 10) = _tau_ff(4 * arm + jt + 10) +
+                                     _Kp_joint[jt + 5] * err_jpos +
+                                     _Kd_joint[jt + 5] * err_jvel;
     }
   }
 
@@ -176,15 +171,15 @@ void H1Wbc::_ContactTaskUpdate(const WbcData &input_data) {
       _end_contact[limb]->UpdateContactSpec();
       _contact_list.push_back(_end_contact[limb]);
     } else { // no contact
-      _end_task[limb]->UpdateTask(&(input_data.pEnd_des[limb]),
-                                  input_data.vEnd_des[limb],
-                                  input_data.aEnd_des[limb]);
-      _task_list.push_back(_end_task[limb]);
+      // _end_task[limb]->UpdateTask(&(input_data.pEnd_des[limb]),
+      //                             input_data.vEnd_des[limb],
+      //                             input_data.aEnd_des[limb]);
+      // _task_list.push_back(_end_task[limb]);
     }
-    // _end_task[limb]->UpdateTask(&(input_data.pEnd_des[limb]),
-    //                             input_data.vEnd_des[limb],
-    //                             input_data.aEnd_des[limb]);
-    // _task_list.push_back(_end_task[limb]);
+    _end_task[limb]->UpdateTask(&(input_data.pEnd_des[limb]),
+                                input_data.vEnd_des[limb],
+                                input_data.aEnd_des[limb]);
+    _task_list.push_back(_end_task[limb]);
   }
 }
 
@@ -201,22 +196,20 @@ void H1Wbc::_ParameterSetup() {
   _Kp_joint[2] = config["kp_joint_leg_3"].as<double>();
   _Kp_joint[3] = config["kp_joint_leg_4"].as<double>();
   _Kp_joint[4] = config["kp_joint_leg_5"].as<double>();
-  _Kp_joint[5] = config["kp_joint_torso"].as<double>();
-  _Kp_joint[6] = config["kp_joint_arm_1"].as<double>();
-  _Kp_joint[7] = config["kp_joint_arm_2"].as<double>();
-  _Kp_joint[8] = config["kp_joint_arm_3"].as<double>();
-  _Kp_joint[9] = config["kp_joint_arm_4"].as<double>();
+  _Kp_joint[5] = config["kp_joint_arm_1"].as<double>();
+  _Kp_joint[6] = config["kp_joint_arm_2"].as<double>();
+  _Kp_joint[7] = config["kp_joint_arm_3"].as<double>();
+  _Kp_joint[8] = config["kp_joint_arm_4"].as<double>();
 
   _Kd_joint[0] = config["kd_joint_leg_1"].as<double>();
   _Kd_joint[1] = config["kd_joint_leg_2"].as<double>();
   _Kd_joint[2] = config["kd_joint_leg_3"].as<double>();
   _Kd_joint[3] = config["kd_joint_leg_4"].as<double>();
   _Kd_joint[4] = config["kd_joint_leg_5"].as<double>();
-  _Kd_joint[5] = config["kd_joint_torso"].as<double>();
-  _Kd_joint[6] = config["kd_joint_arm_1"].as<double>();
-  _Kd_joint[7] = config["kd_joint_arm_2"].as<double>();
-  _Kd_joint[8] = config["kd_joint_arm_3"].as<double>();
-  _Kd_joint[9] = config["kd_joint_arm_4"].as<double>();
+  _Kd_joint[5] = config["kd_joint_arm_1"].as<double>();
+  _Kd_joint[6] = config["kd_joint_arm_2"].as<double>();
+  _Kd_joint[7] = config["kd_joint_arm_3"].as<double>();
+  _Kd_joint[8] = config["kd_joint_arm_4"].as<double>();
 
   ((BodyOriTask *)_body_ori_task)->_Kp[0] =
       config["kp_body_ori_x"].as<double>();
@@ -245,38 +238,34 @@ void H1Wbc::_ParameterSetup() {
       config["kd_body_pos_z"].as<double>();
 
   for (int i = 0; i < 2; i++) {
-    ((LinkPosTask *)_end_task[i])->_Kp[0] = config["kp_foot_x"].as<double>();
-    ((LinkPosTask *)_end_task[i])->_Kp[1] = config["kp_foot_y"].as<double>();
-    ((LinkPosTask *)_end_task[i])->_Kp[2] = config["kp_foot_z"].as<double>();
-    ((LinkPosTask *)_end_task[i])->_Kp[3] = config["kp_foot_roll"].as<double>();
-    ((LinkPosTask *)_end_task[i])->_Kp[4] =
-        config["kp_foot_pitch"].as<double>();
-    ((LinkPosTask *)_end_task[i])->_Kp[5] = config["kp_foot_yaw"].as<double>();
+    ((LegPosTask *)_end_task[i])->_Kp[0] = config["kp_foot_x"].as<double>();
+    ((LegPosTask *)_end_task[i])->_Kp[1] = config["kp_foot_y"].as<double>();
+    ((LegPosTask *)_end_task[i])->_Kp[2] = config["kp_foot_z"].as<double>();
+    ((LegPosTask *)_end_task[i])->_Kp[3] = config["kp_foot_roll"].as<double>();
+    ((LegPosTask *)_end_task[i])->_Kp[4] = config["kp_foot_pitch"].as<double>();
+    ((LegPosTask *)_end_task[i])->_Kp[5] = config["kp_foot_yaw"].as<double>();
 
-    ((LinkPosTask *)_end_task[i])->_Kd[0] = config["kd_foot_x"].as<double>();
-    ((LinkPosTask *)_end_task[i])->_Kd[1] = config["kd_foot_y"].as<double>();
-    ((LinkPosTask *)_end_task[i])->_Kd[2] = config["kd_foot_z"].as<double>();
-    ((LinkPosTask *)_end_task[i])->_Kd[3] = config["kd_foot_roll"].as<double>();
-    ((LinkPosTask *)_end_task[i])->_Kd[4] =
-        config["kd_foot_pitch"].as<double>();
-    ((LinkPosTask *)_end_task[i])->_Kd[5] = config["kd_foot_yaw"].as<double>();
+    ((LegPosTask *)_end_task[i])->_Kd[0] = config["kd_foot_x"].as<double>();
+    ((LegPosTask *)_end_task[i])->_Kd[1] = config["kd_foot_y"].as<double>();
+    ((LegPosTask *)_end_task[i])->_Kd[2] = config["kd_foot_z"].as<double>();
+    ((LegPosTask *)_end_task[i])->_Kd[3] = config["kd_foot_roll"].as<double>();
+    ((LegPosTask *)_end_task[i])->_Kd[4] = config["kd_foot_pitch"].as<double>();
+    ((LegPosTask *)_end_task[i])->_Kd[5] = config["kd_foot_yaw"].as<double>();
   }
   for (int i = 2; i < 4; i++) {
-    ((LinkPosTask *)_end_task[i])->_Kp[0] = config["kp_hand_x"].as<double>();
-    ((LinkPosTask *)_end_task[i])->_Kp[1] = config["kp_hand_y"].as<double>();
-    ((LinkPosTask *)_end_task[i])->_Kp[2] = config["kp_hand_z"].as<double>();
-    ((LinkPosTask *)_end_task[i])->_Kp[3] = config["kp_hand_roll"].as<double>();
-    ((LinkPosTask *)_end_task[i])->_Kp[4] =
-        config["kp_hand_pitch"].as<double>();
-    ((LinkPosTask *)_end_task[i])->_Kp[5] = config["kp_hand_yaw"].as<double>();
+    ((ArmPosTask *)_end_task[i])->_Kp[0] = config["kp_hand_x"].as<double>();
+    ((ArmPosTask *)_end_task[i])->_Kp[1] = config["kp_hand_y"].as<double>();
+    ((ArmPosTask *)_end_task[i])->_Kp[2] = config["kp_hand_z"].as<double>();
+    ((ArmPosTask *)_end_task[i])->_Kp[3] = config["kp_hand_roll"].as<double>();
+    ((ArmPosTask *)_end_task[i])->_Kp[4] = config["kp_hand_pitch"].as<double>();
+    ((ArmPosTask *)_end_task[i])->_Kp[5] = config["kp_hand_yaw"].as<double>();
 
-    ((LinkPosTask *)_end_task[i])->_Kd[0] = config["kd_hand_x"].as<double>();
-    ((LinkPosTask *)_end_task[i])->_Kd[1] = config["kd_hand_y"].as<double>();
-    ((LinkPosTask *)_end_task[i])->_Kd[2] = config["kd_hand_z"].as<double>();
-    ((LinkPosTask *)_end_task[i])->_Kd[3] = config["kd_hand_roll"].as<double>();
-    ((LinkPosTask *)_end_task[i])->_Kd[4] =
-        config["kd_hand_pitch"].as<double>();
-    ((LinkPosTask *)_end_task[i])->_Kd[5] = config["kd_hand_yaw"].as<double>();
+    ((ArmPosTask *)_end_task[i])->_Kd[0] = config["kd_hand_x"].as<double>();
+    ((ArmPosTask *)_end_task[i])->_Kd[1] = config["kd_hand_y"].as<double>();
+    ((ArmPosTask *)_end_task[i])->_Kd[2] = config["kd_hand_z"].as<double>();
+    ((ArmPosTask *)_end_task[i])->_Kd[3] = config["kd_hand_roll"].as<double>();
+    ((ArmPosTask *)_end_task[i])->_Kd[4] = config["kd_hand_pitch"].as<double>();
+    ((ArmPosTask *)_end_task[i])->_Kd[5] = config["kd_hand_yaw"].as<double>();
   }
 
   _dyn_wbc_data->_W_floating =

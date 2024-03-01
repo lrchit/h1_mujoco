@@ -5,10 +5,10 @@
 #include "dynamics.hpp"
 #include <Task.hpp>
 
-class LinkPosTask : public Task {
+class ArmPosTask : public Task {
 public:
-  LinkPosTask(const FBDynModel *, int link_idx, bool virtual_depend = true);
-  virtual ~LinkPosTask();
+  ArmPosTask(const FBDynModel *, int link_idx, bool virtual_depend = true);
+  virtual ~ArmPosTask();
 
   DVec _Kp, _Kd, _Kp_kin;
 

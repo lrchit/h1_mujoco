@@ -65,7 +65,6 @@ void FBDynModel::_updateMBkinmatics() {
   // std::vector<std::string> frame_name;
   // frame_name.push_back("left_foot_center");
   // frame_name.push_back("right_foot_center");
-  // frame_name.push_back("torso_link");
   // frame_name.push_back("left_hand_center");
   // frame_name.push_back("right_hand_center");
   // std::cout << "sequence" << std::endl;
@@ -101,7 +100,7 @@ void FBDynModel::updateModel(const FBModelState &state) {
   _full_config.segment(0, 3) = _state.bodyPosition;
   Vec3 rpy = ori::quatToRPY(_state.bodyOrientation);
   _full_config.segment(3, 3) = rpy;
-  _full_config.segment(6, 19) = _state.q;
+  _full_config.segment(6, 18) = _state.q;
 
   // std::cout <<"[RPY]"<< rpy.transpose() <<std::endl;
   // std::cout << _full_config.transpose() <<std::endl;
@@ -113,12 +112,12 @@ void FBDynModel::updateModel(const FBModelState &state) {
   bodyQuat(3) = _state.bodyOrientation(0);
 
   q.segment(3, 4) = bodyQuat;
-  q.segment(7, 19) = _state.q;
+  q.segment(7, 18) = _state.q;
 
-  v.segment(0, 3) = _state.bodyVelocity.segment(3, 3); // local frame linear vel
+  v.segment(0, 3) = _state.bodyVelocity.segment(0, 3); // local frame linear vel
   v.segment(3, 3) =
-      _state.bodyVelocity.segment(0, 3); // local frame angular vel
-  v.segment(6, 19) = _state.qd;
+      _state.bodyVelocity.segment(3, 3); // local frame angular vel
+  v.segment(6, 18) = _state.qd;
 
   // Mat3 RotMat = ori::quaternionToRotationMatrix(_state.bodyOrientation);
   // qd = v;

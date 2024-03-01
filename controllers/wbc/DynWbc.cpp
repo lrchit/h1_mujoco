@@ -203,9 +203,9 @@ void DynWbc::MakeTorque(DVec &cmd, void *extra_input) {
   DMat JcBar;
   DMat Npre;
 
-  static Eigen::Matrix<double, 25, 25> A_inv_static;
-  static Eigen::Matrix<double, 12, 25> _Jc_static;
-  static Eigen::Matrix<double, 25, 12> JcBar_static;
+  static Eigen::Matrix<double, 24, 24> A_inv_static;
+  static Eigen::Matrix<double, 18, 24> _Jc_static;
+  static Eigen::Matrix<double, 24, 18> JcBar_static;
   if (_dim_rf > 0) {
     // Contact Setting
     _ContactBuilding();

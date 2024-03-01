@@ -7,7 +7,7 @@ SingleContact::SingleContact(const FBDynModel *robot, int pt)
       _contact_pt(pt), _dim_U(8) {
   Contact::idx_Fz_ = 2;
   robot_sys_ = robot;
-  Contact::Jc_ = DMat(Contact::dim_contact_, 25); // configure space dim
+  Contact::Jc_ = DMat(Contact::dim_contact_, 24); // configure space dim
   Contact::JcDotQdot_ = DVec::Zero(Contact::dim_contact_);
   Contact::Uf_ = DMat::Zero(_dim_U, Contact::dim_contact_);
 

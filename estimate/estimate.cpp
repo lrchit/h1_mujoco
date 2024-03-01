@@ -94,11 +94,39 @@ void H1Estm::cheater_compute_state(H1State &state, mjData *d) {
   }
 
   // --- get angvel ---
+  Vector3d omegaBody;
   for (int i = 0; i < 3; ++i) {
-    state.euler_angle_vel(i) = d->qvel[3 + i];
+    omegaBody(i) = d->sensordata[i];
   }
-  std::cout << "state.euler_angle_vel\n"
-            << state.euler_angle_vel.transpose() << std::endl;
+  state.omega = state.rot_mat.transpose() * omegaBody;
+
+  double cos1, tan1, cos2, sin2, cos0, sin0;
+  cos1 = cos(state.euler_angle(1));
+  tan1 = tan(state.euler_angle(1));
+  cos2 = cos(state.euler_angle(2));
+  sin2 = sin(state.euler_angle(2));
+  cos0 = cos(state.euler_angle(0));
+  sin0 = sin(state.euler_angle(0));
+  Matrix3d trans_mat;
+  trans_mat << cos2 / cos1, sin2 / cos1, 0, -sin2, cos2, 0, cos2 * tan1,
+      sin2 * tan1, 1;
+  state.euler_angle_vel = trans_mat * state.omega;
+
+  // std::cout << "state.euler_angle_vel\n"
+  //           << state.euler_angle_vel.transpose() << std::endl;
+  // std::cout << "state.euler_angle_vel_world\n"
+  //           << (state.rot_mat * state.euler_angle_vel).transpose() <<
+  //           std::endl;
+  // std::cout << "state.omega\n"
+  //           << state.omega.transpose() << std::endl;
+  // std::cout << "omegaBody\n" << omegaBody.transpose() <<
+  // std::endl; std::cout << "state.omega2euler\n"
+  //           << (trans_mat * state.omega).transpose() << std::endl;
+  // trans_mat.setZero();
+  // trans_mat << 1, sin0 * tan1, cos0 * tan1, 0, cos0, -sin0, 0, sin0 / cos1,
+  //     cos0 / cos1;
+  // std::cout << "omegaBody2euler\n"
+  //           << (trans_mat * omegaBody).transpose() << std::endl;
 
   // --- get leg_qpos and leg_qvel ---
   int leg_joint_num = 5;
@@ -110,22 +138,13 @@ void H1Estm::cheater_compute_state(H1State &state, mjData *d) {
   }
   // std::cout << "leg_qpos = \n" << state.leg_qpos.transpose() << std::endl;
 
-  // --- get torso_qpos and torso_qvel ---
-  state.torso_qpos = d->qpos[7 + 2 * leg_joint_num];
-  state.torso_qvel = d->qvel[6 + 2 * leg_joint_num];
-
-  // --- get arm_qpos and arm_qvel ---
-  state.arm_qpos(0, 0) = d->qpos[7 + 2 * leg_joint_num];
-  state.arm_qvel(0, 0) = d->qvel[6 + 2 * leg_joint_num];
-  state.arm_qpos(0, 1) = d->qpos[7 + 2 * leg_joint_num];
-  state.arm_qvel(0, 1) = d->qvel[6 + 2 * leg_joint_num];
   int arm_joint_num = 4;
   for (int i = 0; i < 2; ++i) {
     for (int j = 0; j < arm_joint_num; ++j) {
-      state.arm_qpos(j + 1, i) =
-          d->qpos[arm_joint_num * i + j + 7 + 2 * leg_joint_num + 1];
-      state.arm_qvel(j + 1, i) =
-          d->qvel[arm_joint_num * i + j + 6 + 2 * leg_joint_num + 1];
+      state.arm_qpos(j, i) =
+          d->qpos[arm_joint_num * i + j + 7 + 2 * leg_joint_num];
+      state.arm_qvel(j, i) =
+          d->qvel[arm_joint_num * i + j + 6 + 2 * leg_joint_num];
     }
   }
   // std::cout << "arm_qpos = \n" << state.arm_qpos.transpose() << std::endl;
@@ -138,14 +157,15 @@ void H1Estm::cheater_compute_state(H1State &state, mjData *d) {
   frame_name.push_back("right_hand_center");
   Vector<double, 7> qbase(d->qpos[0], d->qpos[1], d->qpos[2], d->qpos[4],
                           d->qpos[5], d->qpos[6], d->qpos[3]);
-  Vector<double, 6> qdbase(d->qvel[0], d->qvel[1], d->qvel[2], d->qvel[3],
-                           d->qvel[4], d->qvel[5]);
+  Vector<double, 6> qdbase(d->qvel[0], d->qvel[1], d->qvel[2],
+                           state.euler_angle_vel(0), state.euler_angle_vel(1),
+                           state.euler_angle_vel(2));
 
   for (int i = 0; i < 2; ++i) {
     Vector<double, 6> p_rel, dp_rel;
-    limb_kin[i].forward_kin_frame(qbase, qdbase, state.leg_qpos.col(i),
-                                  state.leg_qvel.col(i), p_rel, dp_rel,
-                                  frame_name[i]);
+    limb_kin[i].leg_forward_kin_frame(qbase, qdbase, state.leg_qpos.col(i),
+                                      state.leg_qvel.col(i), p_rel, dp_rel,
+                                      frame_name[i]);
 
     state.foot_pos_world.col(i) = p_rel;
     state.foot_vel_world.col(i) = dp_rel;
@@ -166,9 +186,9 @@ void H1Estm::cheater_compute_state(H1State &state, mjData *d) {
   // --- get hand_pos, hand_vel ---
   for (int i = 0; i < 2; ++i) {
     Vector<double, 6> p_rel, dp_rel;
-    limb_kin[2 + i].forward_kin_frame(qbase, qdbase, state.arm_qpos.col(i),
-                                      state.arm_qvel.col(i), p_rel, dp_rel,
-                                      frame_name[2 + i]);
+    limb_kin[2 + i].arm_forward_kin_frame(qbase, qdbase, state.arm_qpos.col(i),
+                                          state.arm_qvel.col(i), p_rel, dp_rel,
+                                          frame_name[2 + i]);
 
     state.hand_pos_world.col(i) = p_rel;
     state.hand_vel_world.col(i) = dp_rel;

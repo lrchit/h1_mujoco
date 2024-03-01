@@ -21,7 +21,7 @@ public:
   void compute_mpc();
   void compute_wbc();
   void state_estimate(mjData *d);
-  Matrix<double, 19, 1> get_joint_torques();
+  Matrix<double, 18, 1> get_joint_torques();
 
   bool use_wbc;
   bool etsm_update_needed;

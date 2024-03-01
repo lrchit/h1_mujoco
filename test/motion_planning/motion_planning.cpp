@@ -122,8 +122,8 @@ void MotionPlanning::config_foot_hold(const H1State &state_cur,
 
       double stance_time = gait->getCurrentStanceTime(dtmpc, i);
 
-      double cos_yaw = cos(-state_des.euler_angle_vel(2) * stance_time / 2);
-      double sin_yaw = sin(-state_des.euler_angle_vel(2) * stance_time / 2);
+      double cos_yaw = cos(-state_des.omega(2) * stance_time / 2);
+      double sin_yaw = sin(-state_des.omega(2) * stance_time / 2);
       Matrix3d Rz;
       Rz << cos_yaw, sin_yaw, 0, -sin_yaw, cos_yaw, 0, 0, 0, 1;
       Vector3d pRobotFrame(foot_location_offset.col(i));
@@ -145,11 +145,11 @@ void MotionPlanning::config_foot_hold(const H1State &state_cur,
 
       Vector3d p_centrifugal;
       p_centrifugal(0) = 0.5 * sqrt(fabs(state_cur.pos(2) / 9.81)) *
-                         (state_cur.lin_vel(1) * state_des.euler_angle_vel(2) -
-                          state_cur.lin_vel(2) * state_des.euler_angle_vel(1));
+                         (state_cur.lin_vel(1) * state_des.omega(2) -
+                          state_cur.lin_vel(2) * state_des.omega(1));
       p_centrifugal(1) = 0.5 * sqrt(fabs(state_cur.pos(2) / 9.81)) *
-                         (state_cur.lin_vel(1) * state_des.euler_angle_vel(0) -
-                          state_cur.lin_vel(0) * state_des.euler_angle_vel(2));
+                         (state_cur.lin_vel(1) * state_des.omega(0) -
+                          state_cur.lin_vel(0) * state_des.omega(2));
 
       // 落脚点
       foot_hold.block(0, i, 3, 1) = p_shoulder + p_symmetry + p_centrifugal;
@@ -176,19 +176,27 @@ void MotionPlanning::update_command(Vector3d lin_vel_cmd,
   double filter_acc = 0.01;
   double filter_dec = 0.005;
 
-  state_des.euler_angle_vel(0) = angle_vel_cmd(0);
-  state_des.euler_angle_vel(1) = angle_vel_cmd(1);
+  state_des.omega(0) = angle_vel_cmd(0);
+  state_des.omega(1) = angle_vel_cmd(1);
   // 加速和减速分别处理，只对yaw速度进行控制，另外2个方向只给角度指令
   for (int i = 0; i < 3; ++i) {
-    if (angle_vel_cmd(i) >= state_des.euler_angle_vel(i))
-      state_des.euler_angle_vel(i) =
-          angle_vel_cmd(i) * filter_acc +
-          (1 - filter_acc) * state_des.euler_angle_vel(i);
+    if (angle_vel_cmd(i) >= state_des.omega(i))
+      state_des.omega(i) =
+          angle_vel_cmd(i) * filter_acc + (1 - filter_acc) * state_des.omega(i);
     else
-      state_des.euler_angle_vel(i) =
-          angle_vel_cmd(i) * filter_dec +
-          (1 - filter_dec) * state_des.euler_angle_vel(i);
+      state_des.omega(i) =
+          angle_vel_cmd(i) * filter_dec + (1 - filter_dec) * state_des.omega(i);
   }
+
+  double cos1, tan1, cos2, sin2;
+  cos1 = cos(state_cur.euler_angle(1));
+  tan1 = tan(state_cur.euler_angle(1));
+  cos2 = cos(state_cur.euler_angle(2));
+  sin2 = sin(state_cur.euler_angle(2));
+  Matrix3d trans_mat;
+  trans_mat << cos2 / cos1, sin2 / cos1, 0, -sin2, cos2, 0, cos2 * tan1,
+      sin2 * tan1, 1;
+  state_des.euler_angle_vel = trans_mat * state_des.omega;
 
   traj_integrate.segment(0, 3) += state_des.euler_angle_vel * dt;
   // traj_integrate.segment(0, 3) =

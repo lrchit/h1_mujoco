@@ -71,11 +71,11 @@ void H1FSM::main_program() {
 
     // 3种模式，站立，踏步，行走
     // 先切力控站立再运动
-    if (counter < 30000000) {
+    if (counter < 3000000) {
       // std::cout << "***************** standing *****************\n"
       //           << std::endl;
       mode = STANDING;
-    } else if (counter < 5500) {
+    } else if (counter < 550000) {
       // std::cout << "***************** stepping *****************\n"
       //           << std::endl;
       mode = STEPPING;
@@ -94,8 +94,7 @@ void H1FSM::main_program() {
       first_stop = false;
     } else {
       if (fabs(state_cur.lin_vel(0)) < 0.1 &&
-          fabs(state_cur.lin_vel(1)) < 0.1 &&
-          fabs(state_cur.euler_angle_vel(2) < 0.1)) {
+          fabs(state_cur.lin_vel(1)) < 0.1 && fabs(state_cur.omega(2) < 0.1)) {
         // std::cout << "***************** standing *****************\n"
         //           << std::endl;
         mode = STANDING;
@@ -193,7 +192,7 @@ void H1FSM::updateMpcData() {
   state_des_vec(1) = rpy_comp(1);
   state_des_vec(2) = state_des.euler_angle(2);
   state_des_vec.segment(3, 3) = state_des.pos;
-  state_des_vec.segment(6, 3) = state_des.euler_angle_vel;
+  state_des_vec.segment(6, 3) = state_des.omega;
   state_des_vec.segment(9, 3) = state_des.lin_vel;
   state_des_vec(12) = -9.81;
   for (int i = 1; i < horizon; ++i) {
@@ -208,7 +207,7 @@ void H1FSM::updateMpcData() {
   Vector<double, 13> state_cur_vec;
   state_cur_vec.segment(0, 3) = state_cur.euler_angle;
   state_cur_vec.segment(3, 3) = state_cur.pos;
-  state_cur_vec.segment(6, 3) = state_cur.euler_angle_vel;
+  state_cur_vec.segment(6, 3) = state_cur.omega;
   state_cur_vec.segment(9, 3) = state_cur.lin_vel;
   state_cur_vec(12) = -9.81;
 
@@ -262,20 +261,20 @@ void H1FSM::updateWbcData() {
 
   Matrix3d RotMat = state_cur.rot_mat;
 
-  wbc_data.state.bodyVelocity.segment(0, 3) = state_cur.euler_angle_vel;
-  wbc_data.state.bodyVelocity.segment(3, 3) = state_cur.lin_vel;
+  wbc_data.state.bodyVelocity.segment(0, 3) =
+      state_cur.rot_mat * state_cur.lin_vel;
+  wbc_data.state.bodyVelocity.segment(3, 3) =
+      state_cur.rot_mat * state_cur.euler_angle_vel;
 
   for (int i = 0; i < 2; ++i) {
     wbc_data.state.q.segment(i * 5, 5) = state_cur.leg_qpos.col(i);
     wbc_data.state.qd.segment(i * 5, 5) = state_cur.leg_qvel.col(i);
   }
-  wbc_data.state.q(10) = state_cur.torso_qpos;
-  wbc_data.state.qd(10) = state_cur.torso_qvel;
   for (int i = 0; i < 2; ++i) {
-    wbc_data.state.q.segment(i * 4 + 11, 4) =
-        state_cur.arm_qpos.block(1, i, 4, 1);
-    wbc_data.state.qd.segment(i * 4 + 11, 4) =
-        state_cur.arm_qvel.block(1, i, 4, 1);
+    wbc_data.state.q.segment(i * 4 + 10, 4) =
+        state_cur.arm_qpos.block(0, i, 4, 1);
+    wbc_data.state.qd.segment(i * 4 + 10, 4) =
+        state_cur.arm_qvel.block(0, i, 4, 1);
   }
 
   wbc_data.pBody_des = state_des.pos;
@@ -284,7 +283,7 @@ void H1FSM::updateWbcData() {
   wbc_data.vBody_des = state_des.lin_vel;
   wbc_data.aBody_des = state_des.lin_acc;
   wbc_data.pBodyOri_des = ori::rpyToQuat(state_des.euler_angle);
-  wbc_data.vBodyOri_des = state_des.euler_angle_vel;
+  wbc_data.vBodyOri_des = state_des.omega;
 
   for (int i = 0; i < 2; ++i) {
     wbc_data.pEnd_des[i] = state_des.foot_pos_world.col(i);
@@ -341,7 +340,7 @@ void H1FSM::compute_wbc() {
 }
 
 // 返回joint_torque发给电机控制器
-Matrix<double, 19, 1> H1FSM::get_joint_torques() {
+Matrix<double, 18, 1> H1FSM::get_joint_torques() {
   // std::cout << "joint_torque = \n"
   //           << state_cur.joint_torque.transpose() << std::endl;
   return state_cur.joint_torque;

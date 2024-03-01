@@ -9,10 +9,10 @@ constraint_num: 16
 iteration_between_mpc: 20
 
 q1: 1
-q2: 0.25
-q3: 20
-q4: 2
-q5: 2
+q2: 1
+q3: 5
+q4: 3
+q5: 10
 q6: 30
 q7: 0
 q8: 0

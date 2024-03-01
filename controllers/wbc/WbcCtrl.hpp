@@ -1,11 +1,12 @@
 
 #pragma once
 
+#include "ArmPosTask.hpp"
 #include "BodyOriTask.hpp"
 #include "BodyPosTask.hpp"
 #include "DynWbc.hpp"
 #include "KinWbc.hpp"
-#include "LinkPosTask.hpp"
+#include "LegPosTask.hpp"
 #include "SingleContact.hpp"
 #include "cppTypes.h"
 #include "dynamics.hpp"
@@ -17,7 +18,7 @@ public:
   std::vector<int> contact_state;
   Vec3 pBody_des; // global
   Vec3 vBody_des; // global
-  Vec3 aBody_des; //
+  Vec3 aBody_des; // global
 
   Quat pBodyOri_des; // global
   Vec3 vBodyOri_des; // local
@@ -34,12 +35,12 @@ public:
   H1Wbc();
   virtual ~H1Wbc();
 
-  void run(const WbcData &input_data, Vec19 &joint_tau); // output joint_tau
+  void run(const WbcData &input_data, Vec18 &joint_tau); // output joint_tau
 
 protected:
   void _ContactTaskUpdate(const WbcData &input_data);
   void _UpdateModel(const WbcData &input_data);
-  void _UpdateLimbCMD(Vec19 &joint_tau,
+  void _UpdateLimbCMD(Vec18 &joint_tau,
                       const WbcData &input_data); // output joint_tau
   void _ComputeWBC();
   void _CleanTaskContact();

@@ -47,6 +47,7 @@
   <worldbody>
     <body name="pelvis" pos="0 0 1.1" childclass="h1">
       <inertial pos="-0.0002 4e-05 -0.04522" quat="0.498303 0.499454 -0.500496 0.501741" mass="5.39" diaginertia="0.0490211 0.0445821 0.00824619"/>
+      <site name="pelvis-imu" />
       <freejoint/>
       <!-- <joint type="free" damping="1e8" frictionloss="0" armature="0" /> -->
       <geom class="visual" mesh="pelvis"/>
@@ -113,7 +114,6 @@
       </body>
       <body name="torso_link">
         <inertial pos="0.000489 0.002797 0.20484" quat="0.999989 -0.00130808 -0.00282289 -0.00349105" mass="17.789" diaginertia="0.487315 0.409628 0.127837"/>
-        <joint name="torso_joint" axis="0 0 1" range="-2.35 2.35" damping="1e8"/>
         <geom class="visual" mesh="torso_link"/>
         <geom class="collision" mesh="torso_link"/>
         <geom class="visual" material="white" mesh="logo_link"/>
@@ -181,7 +181,6 @@
     <motor class="h1" name="right_hip_pitch_joint" joint="right_hip_pitch_joint" ctrlrange="-200 200"/>
     <motor class="h1" name="right_knee_joint" joint="right_knee_joint" ctrlrange="-300 300"/>
     <motor class="h1" name="right_ankle_joint" joint="right_ankle_joint" ctrlrange="-40 40"/>
-    <motor class="h1" name="torso_joint" joint="torso_joint" ctrlrange="-200 200"/>
     <motor class="h1" name="left_shoulder_pitch_joint" joint="left_shoulder_pitch_joint" ctrlrange="-40 40"/>
     <motor class="h1" name="left_shoulder_roll_joint" joint="left_shoulder_roll_joint" ctrlrange="-40 40"/>
     <motor class="h1" name="left_shoulder_yaw_joint" joint="left_shoulder_yaw_joint" ctrlrange="-18 18"/>
@@ -193,6 +192,7 @@
   </actuator>
 
   <sensor>
+    <gyro name="imu" site="pelvis-imu" noise="5e-4" cutoff="34.9"/>
     <gyro name="imu-angular-velocity" site="imu" noise="5e-4" cutoff="34.9"/>
     <accelerometer name="imu-linear-acceleration" site="imu" noise="1e-2" cutoff="157"/>
   </sensor>
@@ -203,7 +203,6 @@
     1 0 0 0
     0 0 -0.4 0.8 -0.4
     0 0 -0.4 0.8 -0.4
-    0
     0 0 0 0
     0 0 0 0"/>
   </keyframe>

@@ -3,7 +3,7 @@
 // (X, Y, Z)
 #include "orientation_tools.h"
 BodyPosTask::BodyPosTask(const FBDynModel *robot) : Task(3), _robot_sys(robot) {
-  TK::Jt_ = DMat::Zero(TK::dim_task_, 25); // configure space dim
+  TK::Jt_ = DMat::Zero(TK::dim_task_, 24); // configure space dim
   // TK::Jt_.block(0, 3, 3, 3).setIdentity();
   TK::Jt_.block(0, 0, 3, 3).setIdentity();
   TK::JtDotQdot_ = DVec::Zero(TK::dim_task_);

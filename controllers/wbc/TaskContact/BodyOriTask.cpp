@@ -3,7 +3,7 @@
 #include <orientation_tools.h>
 
 BodyOriTask::BodyOriTask(const FBDynModel *robot) : Task(3), _robot_sys(robot) {
-  TK::Jt_ = DMat::Zero(TK::dim_task_, 25); // 18 is configure space size
+  TK::Jt_ = DMat::Zero(TK::dim_task_, 24); // 24 is configure space size
   // TK::Jt_.block(0, 0, 3, 3).setIdentity();
   TK::Jt_.block(0, 3, 3, 3).setIdentity();
   TK::JtDotQdot_ = DVec::Zero(TK::dim_task_);

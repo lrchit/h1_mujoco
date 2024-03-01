@@ -10,12 +10,10 @@ kinematics::kinematics(const std::string urdf_filename) {
 
 kinematics::~kinematics() {}
 
-void kinematics::forward_kin_frame(Vector<double, 7> qbase,
-                                   Vector<double, 6> qdbase,
-                                   Vector<double, 5> qlimb,
-                                   Vector<double, 5> qdlimb,
-                                   Vector<double, 6> &x, Vector<double, 6> &dx,
-                                   std::string frame_name) {
+void kinematics::leg_forward_kin_frame(
+    Vector<double, 7> qbase, Vector<double, 6> qdbase, Vector<double, 5> qlimb,
+    Vector<double, 5> qdlimb, Vector<double, 6> &x, Vector<double, 6> &dx,
+    std::string frame_name) {
 
   pinocchio::FrameIndex FRAME_ID = model.getFrameId(frame_name);
 
@@ -25,6 +23,39 @@ void kinematics::forward_kin_frame(Vector<double, 7> qbase,
   Vector<double, 11> qd;
   qd.segment(0, 6) = qdbase;
   qd.segment(6, 5) = qdlimb;
+  pinocchio::forwardKinematics(model, data, q, qd);
+  pinocchio::updateFramePlacements(model, data);
+
+  // 获取末端位姿
+  const pinocchio::SE3 &end_effector_placement = data.oMf[FRAME_ID];
+
+  x.segment(0, 3) = end_effector_placement.translation();
+
+  Matrix3d rot_mat_base_to_end(end_effector_placement.rotation().transpose());
+  Quat quat_base_to_end = ori::rotationMatrixToQuaternion(rot_mat_base_to_end);
+  x.segment(3, 3) = ori::quatToRPY(quat_base_to_end);
+
+  // 计算并获取末端执行器的速度向量（包含线速度和角速度）
+  dx = pinocchio::getFrameVelocity(model, data, FRAME_ID,
+                                   pinocchio::LOCAL_WORLD_ALIGNED);
+
+  // std::cout<<'\n'<<"x: "<<x.transpose()<< '\n'<<"dx "<< \
+    // dx.transpose()<<'\n'<<"dx"<<dx.transpose()<<std::endl;
+}
+
+void kinematics::arm_forward_kin_frame(
+    Vector<double, 7> qbase, Vector<double, 6> qdbase, Vector<double, 4> qlimb,
+    Vector<double, 4> qdlimb, Vector<double, 6> &x, Vector<double, 6> &dx,
+    std::string frame_name) {
+
+  pinocchio::FrameIndex FRAME_ID = model.getFrameId(frame_name);
+
+  Vector<double, 11> q;
+  q.segment(0, 7) = qbase;
+  q.segment(7, 4) = qlimb;
+  Vector<double, 10> qd;
+  qd.segment(0, 6) = qdbase;
+  qd.segment(6, 4) = qdlimb;
   pinocchio::forwardKinematics(model, data, q, qd);
   pinocchio::updateFramePlacements(model, data);
 

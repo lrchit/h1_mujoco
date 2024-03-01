@@ -26,8 +26,7 @@ void H1Demo::standing_demo(H1State &_state_cur, Vector3d &lin_vel_cmd,
   _traj_integrate(0) = 0;
   _traj_integrate(1) = 0;
   _traj_integrate(3) =
-      (_state_cur.foot_pos_world(0, 0) + _state_cur.foot_pos_world(0, 1)) / 2 -
-      0.039468;
+      (_state_cur.foot_pos_world(0, 0) + _state_cur.foot_pos_world(0, 1)) / 2;
   _traj_integrate(4) =
       (_state_cur.foot_pos_world(1, 0) + _state_cur.foot_pos_world(1, 1)) / 2;
   _traj_integrate(5) = body_height_stand;

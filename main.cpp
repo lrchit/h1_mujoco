@@ -458,7 +458,7 @@ void FSMLoop(mj::Simulate &sim) {
         {
           FSM.main_program();
 
-          for (int i = 0; i < 19; ++i) {
+          for (int i = 0; i < 18; ++i) {
             d->ctrl[i] = FSM.get_joint_torques()(i);
           }
         }
@@ -546,9 +546,6 @@ void EstimateLoop(mj::Simulate &sim) {
           // if (FSM.etsm_update_needed) {
           // estimate
           FSM.state_estimate(d);
-          for (int i = 0; i < 3; ++i) {
-            std::cout << "euler_angle_vel\n" << d->sensordata[i] << std::endl;
-          }
           // }
         }
 
@@ -591,13 +588,11 @@ void PhysicsThread(mj::Simulate *sim, const char *filename) {
                             0, 0, -0.800729, 1.60146, -0.800729,
                             // right leg
                             0, 0, -0.800729, 1.60146, -0.800729,
-                            // torso joint
-                            0,
                             // left arm
                             0, 0, 0, 0,
                             // right arm
                             0, 0, 0, 0};
-      for (int i = 0; i < 26; ++i) {
+      for (int i = 0; i < 25; ++i) {
         d->qpos[i] = qpos_init[i];
       }
 

@@ -113,7 +113,6 @@
       </body>
       <body name="torso_link">
         <inertial pos="0.000489 0.002797 0.20484" quat="0.999989 -0.00130808 -0.00282289 -0.00349105" mass="17.789" diaginertia="0.487315 0.409628 0.127837"/>
-        <joint name="torso_joint" axis="0 0 1" range="-2.35 2.35" damping="1e8"/>
         <geom class="visual" mesh="torso_link"/>
         <geom class="collision" mesh="torso_link"/>
         <geom class="visual" material="white" mesh="logo_link"/>
@@ -181,7 +180,6 @@
     <motor class="h1" name="right_hip_pitch_joint" joint="right_hip_pitch_joint" ctrlrange="-200 200"/>
     <motor class="h1" name="right_knee_joint" joint="right_knee_joint" ctrlrange="-300 300"/>
     <motor class="h1" name="right_ankle_joint" joint="right_ankle_joint" ctrlrange="-40 40"/>
-    <motor class="h1" name="torso_joint" joint="torso_joint" ctrlrange="-200 200"/>
     <motor class="h1" name="left_shoulder_pitch_joint" joint="left_shoulder_pitch_joint" ctrlrange="-40 40"/>
     <motor class="h1" name="left_shoulder_roll_joint" joint="left_shoulder_roll_joint" ctrlrange="-40 40"/>
     <motor class="h1" name="left_shoulder_yaw_joint" joint="left_shoulder_yaw_joint" ctrlrange="-18 18"/>
@@ -203,7 +201,6 @@
     1 0 0 0
     0 0 -0.4 0.8 -0.4
     0 0 -0.4 0.8 -0.4
-    0
     0 0 0 0
     0 0 0 0"/>
   </keyframe>
